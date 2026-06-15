@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignalFlow — AI Parking Intelligence | Flipkart Gridlock 2.0</title>
+    <meta name="description" content="AI-driven parking intelligence platform that detects illegal parking hotspots and quantifies their congestion impact to enable targeted enforcement in Bengaluru.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Leaflet Heatmap -->
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header" id="header">
+        <div class="header-left">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon>
+                        <line x1="12" y1="22" x2="12" y2="15.5"></line>
+                        <polyline points="22 8.5 12 15.5 2 8.5"></polyline>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-name">SignalFlow</span>
+                    <span class="logo-sub">Parking Intelligence Platform</span>
+                </div>
+            </div>
+        </div>
+
+        <nav class="nav-tabs" id="navTabs">
+            <button class="nav-tab active" data-view="map" id="tab-map">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span>Hotspot Map</span>
+            </button>
+            <button class="nav-tab" data-view="analytics" id="tab-analytics">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+                <span>Analytics</span>
+            </button>
+            <button class="nav-tab" data-view="patrol" id="tab-patrol">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                <span>Patrol Planner</span>
+            </button>
+            <button class="nav-tab" data-view="forecast" id="tab-forecast">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                <span>Forecasts</span>
+            </button>
+        </nav>
+
+        <div class="header-right">
+            <button class="tour-btn" id="tourBtn" title="Start Guided Tour">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <span>Auto Tour</span>
+            </button>
+            <div class="flipkart-badge">
+                <span>Flipkart Gridlock 2.0</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- KPI Cards -->
+    <section class="kpi-bar" id="kpiBar">
+        <div class="kpi-card" id="kpi-total">
+            <div class="kpi-value" id="kpi-total-val">—</div>
+            <div class="kpi-label">Total Violations</div>
+            <div class="kpi-sparkline"></div>
+        </div>
+        <div class="kpi-card" id="kpi-hotspots">
+            <div class="kpi-value" id="kpi-hotspots-val">—</div>
+            <div class="kpi-label">Active Hotspots</div>
+        </div>
+        <div class="kpi-card" id="kpi-daily">
+            <div class="kpi-value" id="kpi-daily-val">—</div>
+            <div class="kpi-label">Avg Daily Violations</div>
+        </div>
+        <div class="kpi-card accent" id="kpi-mainroad">
+            <div class="kpi-value" id="kpi-mainroad-val">—</div>
+            <div class="kpi-label">Main Road Impact</div>
+        </div>
+        <div class="kpi-card" id="kpi-heavy">
+            <div class="kpi-value" id="kpi-heavy-val">—</div>
+            <div class="kpi-label">Heavy Vehicle %</div>
+        </div>
+    </section>
+
+    <!-- Main Content Views -->
+    <main class="main-content">
+
+        <!-- VIEW 1: HOTSPOT MAP -->
+        <section class="view active" id="view-map">
+            <div class="map-container">
+                <div id="map" class="map"></div>
+
+                <!-- Time Slider -->
+                <div class="time-slider-panel" id="timeSliderPanel">
+                    <div class="slider-header">
+                        <span class="slider-title">Time of Day (IST)</span>
+                        <button class="play-btn" id="playBtn" title="Play animation">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        </button>
+                        <span class="slider-time" id="sliderTimeLabel">All Hours</span>
+                    </div>
+                    <input type="range" class="time-slider" id="timeSlider" min="-1" max="23" value="-1" step="1">
+                    <div class="slider-ticks">
+                        <span>All</span><span>6AM</span><span>12PM</span><span>6PM</span><span>11PM</span>
+                    </div>
+                </div>
+
+                <!-- Map Legend -->
+                <div class="map-legend" id="mapLegend">
+                    <h4>Hotspot Severity</h4>
+                    <div class="legend-item"><span class="legend-dot critical"></span> Critical</div>
+                    <div class="legend-item"><span class="legend-dot high"></span> High</div>
+                    <div class="legend-item"><span class="legend-dot medium"></span> Medium</div>
+                    <div class="legend-item"><span class="legend-dot low"></span> Low</div>
+                </div>
+
+                <!-- Hotspot Detail Panel -->
+                <div class="hotspot-detail" id="hotspotDetail" style="display:none;">
+                    <button class="close-btn" id="closeDetail">&times;</button>
+                    <h3 id="detailTitle">Hotspot Details</h3>
+                    <div class="detail-grid" id="detailGrid"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 2: ANALYTICS -->
+        <section class="view" id="view-analytics">
+            <div class="analytics-grid">
+                <div class="chart-card wide">
+                    <h3>Hourly Violation Pattern <span class="badge">IST</span></h3>
+                    <canvas id="chartHourly"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Day of Week</h3>
+                    <canvas id="chartDaily"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Vehicle Types</h3>
+                    <canvas id="chartVehicles"></canvas>
+                </div>
+                <div class="chart-card wide">
+                    <h3>Weekday vs Weekend <span class="badge">Avg per Day</span></h3>
+                    <canvas id="chartWeekdayWeekend"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Violation Types</h3>
+                    <canvas id="chartViolations"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Monthly Trend</h3>
+                    <canvas id="chartMonthly"></canvas>
+                </div>
+                <div class="chart-card wide">
+                    <h3>Top Stations by Violations</h3>
+                    <canvas id="chartStations"></canvas>
+                </div>
+                <div class="chart-card wide">
+                    <h3>Daily Violations Timeline</h3>
+                    <canvas id="chartTimeline"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 3: PATROL PLANNER -->
+        <section class="view" id="view-patrol">
+            <div class="patrol-layout">
+                <div class="patrol-map-container">
+                    <div id="patrolMap" class="map"></div>
+                </div>
+                <div class="patrol-sidebar">
+                    <h3>🚔 Enforcement Recommendations</h3>
+                    <p class="patrol-subtitle">AI-optimized patrol deployment based on Congestion Impact Scores</p>
+                    <div class="patrol-list" id="patrolList"></div>
+                    <div class="patrol-summary" id="patrolSummary">
+                        <div class="summary-row">
+                            <span>Total Patrol Zones</span>
+                            <span id="totalZones">—</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Estimated Coverage</span>
+                            <span id="estCoverage">—</span>
+                        </div>
+                        <div class="summary-row accent">
+                            <span>Projected Reduction</span>
+                            <span id="projReduction">—</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 4: FORECASTS -->
+        <section class="view" id="view-forecast">
+            <div class="forecast-layout">
+                <div class="forecast-main">
+                    <div class="chart-card wide">
+                        <h3>7-Day Violation Forecast <span class="badge">City-wide</span></h3>
+                        <canvas id="chartForecast"></canvas>
+                    </div>
+                    <div class="chart-card wide">
+                        <h3>Historical vs Predicted <span class="badge model-badge" id="modelBadge">R² = —</span></h3>
+                        <canvas id="chartHistPred"></canvas>
+                    </div>
+                </div>
+                <div class="forecast-sidebar">
+                    <h3>📊 Model Performance</h3>
+                    <div class="metric-card" id="metricMAE">
+                        <div class="metric-label">MAE</div>
+                        <div class="metric-value">—</div>
+                    </div>
+                    <div class="metric-card" id="metricRMSE">
+                        <div class="metric-label">RMSE</div>
+                        <div class="metric-value">—</div>
+                    </div>
+                    <div class="metric-card" id="metricR2">
+                        <div class="metric-label">R² Score</div>
+                        <div class="metric-value">—</div>
+                    </div>
+                    <h3 style="margin-top:1.5rem;">Station Trends</h3>
+                    <div class="station-trends" id="stationTrends"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Tour Overlay -->
+    <div class="tour-overlay" id="tourOverlay" style="display:none;">
+        <div class="tour-card" id="tourCard">
+            <div class="tour-step-indicator" id="tourStepIndicator"></div>
+            <h3 id="tourTitle"></h3>
+            <p id="tourText"></p>
+            <div class="tour-actions">
+                <button class="tour-skip" id="tourSkip">Skip Tour</button>
+                <button class="tour-next" id="tourNext">Next →</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

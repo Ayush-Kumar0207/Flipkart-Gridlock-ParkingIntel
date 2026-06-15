@@ -1,0 +1,13 @@
+{
+  "total_violations": 298450,
+  "unique_locations": 209129,
+  "unique_junctions": 169,
+  "unique_stations": 54,
+  "main_road_pct": 9.2,
+  "top_violation": "WRONG PARKING",
+  "top_vehicle": "SCOOTER",
+  "date_range": "2023-11-10 to 2024-04-08",
+  "avg_daily_violations": 1976.0,
+  "heavy_vehicle_pct": 4.2,
+  "total_days": 151
+}

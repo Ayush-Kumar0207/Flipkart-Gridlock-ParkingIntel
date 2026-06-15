@@ -1,0 +1,182 @@
+[
+  {
+    "station": "Upparpet",
+    "cis": 46.6,
+    "total_violations": 34468,
+    "peak_hours": [
+      8.0,
+      9.0,
+      10.0
+    ],
+    "peak_hours_str": "8.0:00, 9.0:00, 10.0:00",
+    "peak_day": "Sunday",
+    "avg_hourly_violations": 9.5,
+    "main_road_pct": 2.1,
+    "recommended_units": 5,
+    "expected_reduction_pct": 28.0,
+    "lat": 12.976666,
+    "lon": 77.577388
+  },
+  {
+    "station": "Shivajinagar",
+    "cis": 40.5,
+    "total_violations": 28044,
+    "peak_hours": [
+      9.0,
+      10.0,
+      11.0
+    ],
+    "peak_hours_str": "9.0:00, 10.0:00, 11.0:00",
+    "peak_day": "Sunday",
+    "avg_hourly_violations": 7.7,
+    "main_road_pct": 3.7,
+    "recommended_units": 5,
+    "expected_reduction_pct": 24.3,
+    "lat": 12.982142,
+    "lon": 77.607041
+  },
+  {
+    "station": "HAL Old Airport",
+    "cis": 37.6,
+    "total_violations": 20819,
+    "peak_hours": [
+      3.0,
+      4.0,
+      5.0
+    ],
+    "peak_hours_str": "3.0:00, 4.0:00, 5.0:00",
+    "peak_day": "Thursday",
+    "avg_hourly_violations": 5.7,
+    "main_road_pct": 30.8,
+    "recommended_units": 4,
+    "expected_reduction_pct": 22.6,
+    "lat": 12.943423,
+    "lon": 77.696756
+  },
+  {
+    "station": "Malleshwaram",
+    "cis": 32.0,
+    "total_violations": 22200,
+    "peak_hours": [
+      8.0,
+      9.0,
+      10.0
+    ],
+    "peak_hours_str": "8.0:00, 9.0:00, 10.0:00",
+    "peak_day": "Sunday",
+    "avg_hourly_violations": 6.1,
+    "main_road_pct": 1.2,
+    "recommended_units": 4,
+    "expected_reduction_pct": 19.2,
+    "lat": 13.005484,
+    "lon": 77.559836
+  },
+  {
+    "station": "City Market",
+    "cis": 28.0,
+    "total_violations": 17646,
+    "peak_hours": [
+      0.0,
+      9.0,
+      10.0
+    ],
+    "peak_hours_str": "0.0:00, 9.0:00, 10.0:00",
+    "peak_day": "Sunday",
+    "avg_hourly_violations": 4.9,
+    "main_road_pct": 3.4,
+    "recommended_units": 3,
+    "expected_reduction_pct": 16.8,
+    "lat": 12.964505,
+    "lon": 77.577126
+  },
+  {
+    "station": "Vijayanagara",
+    "cis": 23.1,
+    "total_violations": 14652,
+    "peak_hours": [
+      4.0,
+      10.0,
+      11.0
+    ],
+    "peak_hours_str": "4.0:00, 10.0:00, 11.0:00",
+    "peak_day": "Thursday",
+    "avg_hourly_violations": 4.0,
+    "main_road_pct": 3.1,
+    "recommended_units": 2,
+    "expected_reduction_pct": 13.9,
+    "lat": 12.977795,
+    "lon": 77.542829
+  },
+  {
+    "station": "Mahadevapura",
+    "cis": 22.2,
+    "total_violations": 6187,
+    "peak_hours": [
+      6.0,
+      10.0,
+      11.0
+    ],
+    "peak_hours_str": "6.0:00, 10.0:00, 11.0:00",
+    "peak_day": "Sunday",
+    "avg_hourly_violations": 1.7,
+    "main_road_pct": 40.1,
+    "recommended_units": 1,
+    "expected_reduction_pct": 13.3,
+    "lat": 12.993506,
+    "lon": 77.694738
+  },
+  {
+    "station": "Rajajinagar",
+    "cis": 21.3,
+    "total_violations": 10998,
+    "peak_hours": [
+      3.0,
+      10.0,
+      11.0
+    ],
+    "peak_hours_str": "3.0:00, 10.0:00, 11.0:00",
+    "peak_day": "Wednesday",
+    "avg_hourly_violations": 3.0,
+    "main_road_pct": 7.0,
+    "recommended_units": 2,
+    "expected_reduction_pct": 12.8,
+    "lat": 12.998552,
+    "lon": 77.548612
+  },
+  {
+    "station": "K.R. Pura",
+    "cis": 20.9,
+    "total_violations": 6546,
+    "peak_hours": [
+      0.0,
+      1.0,
+      11.0
+    ],
+    "peak_hours_str": "0.0:00, 1.0:00, 11.0:00",
+    "peak_day": "Sunday",
+    "avg_hourly_violations": 1.8,
+    "main_road_pct": 25.5,
+    "recommended_units": 1,
+    "expected_reduction_pct": 12.5,
+    "lat": 13.010588,
+    "lon": 77.69773
+  },
+  {
+    "station": "Kodigehalli",
+    "cis": 20.3,
+    "total_violations": 10916,
+    "peak_hours": [
+      10.0,
+      11.0,
+      12.0
+    ],
+    "peak_hours_str": "10.0:00, 11.0:00, 12.0:00",
+    "peak_day": "Monday",
+    "avg_hourly_violations": 3.0,
+    "main_road_pct": 2.2,
+    "recommended_units": 2,
+    "expected_reduction_pct": 12.2,
+    "lat": 13.060296,
+    "lon": 77.586265
+  }
+]
