@@ -27,7 +27,7 @@ def main():
 
     # Step 1: Data Processing
     print("\n" + "─" * 50)
-    print("STEP 1/5: Data Processing")
+    print("STEP 1/6: Data Processing")
     print("─" * 50)
     from data_processor import process_data
     df = process_data('data_raw.csv', 'data_clean.csv')
@@ -39,7 +39,7 @@ def main():
 
     # Step 2: Temporal Analysis & Summary Stats
     print("\n" + "─" * 50)
-    print("STEP 2/5: Temporal Analysis")
+    print("STEP 2/6: Temporal Analysis")
     print("─" * 50)
     from temporal_analyzer import analyze_temporal_patterns, compute_summary_stats
     analyze_temporal_patterns(df, output_dir)
@@ -47,21 +47,21 @@ def main():
 
     # Step 3: Hotspot Detection
     print("\n" + "─" * 50)
-    print("STEP 3/5: Hotspot Detection (Spatial Clustering)")
+    print("STEP 3/6: Hotspot Detection (Spatial Clustering)")
     print("─" * 50)
     from hotspot_engine import run_hotspot_analysis
     df_clustered, cluster_summary, hotspot_list = run_hotspot_analysis(df, output_dir)
 
     # Step 4: Impact Scoring
     print("\n" + "─" * 50)
-    print("STEP 4/5: Congestion Impact Scoring")
+    print("STEP 4/6: Congestion Impact Scoring")
     print("─" * 50)
     from impact_scorer import compute_impact_scores
     junction_stats, station_stats = compute_impact_scores(df, output_dir)
 
     # Step 5: Forecasting & Enforcement
     print("\n" + "─" * 50)
-    print("STEP 5/5: Forecasting & Enforcement Optimization")
+    print("STEP 5/6: Forecasting & Enforcement Optimization")
     print("─" * 50)
     from forecaster import run_forecasting, generate_enforcement_recommendations
     run_forecasting(df, output_dir)
@@ -69,6 +69,19 @@ def main():
     # Load impact scores for enforcement recommendations
     impact_path = os.path.join(output_dir, 'impact_scores.json')
     generate_enforcement_recommendations(df, impact_path, output_dir)
+
+    # Step 6: Operations Brief & Scenario Planning
+    print("\n" + "─" * 50)
+    print("STEP 6/6: Operations Brief & Patrol Budget Scenarios")
+    print("─" * 50)
+    from operations_brief import generate_operations_brief
+    generate_operations_brief(
+        df,
+        impact_path=impact_path,
+        enforcement_path=os.path.join(output_dir, 'enforcement.json'),
+        forecasts_path=os.path.join(output_dir, 'forecasts.json'),
+        output_dir=output_dir,
+    )
 
     # Summary
     elapsed = time.time() - start

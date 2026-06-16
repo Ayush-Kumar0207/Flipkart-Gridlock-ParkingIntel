@@ -17,6 +17,7 @@ let isPlaying = false;
 let playInterval = null;
 let charts = {};
 let tourStep = 0;
+let operationsBriefData = null;
 
 // Chart.js global dark theme
 Chart.defaults.color = '#8b93b3';
@@ -44,6 +45,11 @@ const COLORS = {
 
 const SEVERITY_COLORS = { Critical: COLORS.critical, High: COLORS.high, Medium: COLORS.medium, Low: COLORS.low };
 
+function formatNumber(value, digits = 0) {
+    const num = Number(value) || 0;
+    return num.toLocaleString(undefined, { maximumFractionDigits: digits });
+}
+
 // ============================================================
 // DATA LOADING
 // ============================================================
@@ -59,7 +65,7 @@ async function loadJSON(file) {
 }
 
 async function loadAllData() {
-    const [stats, hotspots, heatmap, temporal, impact, forecasts, enforcement, hourlyAnim] = await Promise.all([
+    const [stats, hotspots, heatmap, temporal, impact, forecasts, enforcement, hourlyAnim, operationsBrief] = await Promise.all([
         loadJSON('stats.json'),
         loadJSON('hotspots.json'),
         loadJSON('heatmap_data.json'),
@@ -68,8 +74,9 @@ async function loadAllData() {
         loadJSON('forecasts.json'),
         loadJSON('enforcement.json'),
         loadJSON('hourly_animation.json'),
+        loadJSON('operations_brief.json'),
     ]);
-    return { stats, hotspots, heatmap, temporal, impact, forecasts, enforcement, hourlyAnim };
+    return { stats, hotspots, heatmap, temporal, impact, forecasts, enforcement, hourlyAnim, operationsBrief };
 }
 
 // ============================================================
@@ -122,6 +129,25 @@ function animateNumber(elId, target) {
         if (progress < 1) requestAnimationFrame(step);
     }
     requestAnimationFrame(step);
+}
+
+function renderOpsBrief(opsBrief) {
+    if (!opsBrief || !opsBrief.top_action || !opsBrief.city_brief) return;
+
+    operationsBriefData = opsBrief;
+    const city = opsBrief.city_brief;
+    const action = opsBrief.top_action;
+
+    const title = `${action.station}: deploy ${action.recommended_units} units during ${action.peak_window}`;
+    const peakWindowShort = city.top_peak_window.label.replace(/:00/g, '');
+    document.getElementById('opsBriefTitle').textContent = title;
+    document.getElementById('opsPeakWindow').textContent =
+        `${peakWindowShort} (${city.top_peak_window.share_pct}%)`;
+    document.getElementById('opsTopZone').textContent = action.station;
+    document.getElementById('opsDailyTarget').textContent =
+        `${formatNumber(action.peak_window_daily_avg, 1)}/day`;
+    document.getElementById('opsModeledReduction').textContent =
+        `${formatNumber(action.modeled_weekly_reduction)}/week`;
 }
 
 // ============================================================
@@ -528,8 +554,9 @@ function renderAnalytics(temporal) {
 // ============================================================
 // PATROL PLANNER (View 3)
 // ============================================================
-function initPatrolView(enforcement) {
+function initPatrolView(enforcement, opsBrief) {
     if (!enforcement || enforcement.length === 0) return;
+    const playbookMap = new Map((opsBrief?.station_playbooks || []).map(p => [p.station, p]));
 
     // Init patrol map
     patrolMap = L.map('patrolMap', {
@@ -548,7 +575,7 @@ function initPatrolView(enforcement) {
     let totalReduction = 0;
 
     enforcement.forEach((rec, i) => {
-        const color = rec.cis > 30 ? COLORS.critical : rec.cis > 20 ? COLORS.high : rec.cis > 10 ? COLORS.medium : COLORS.low;
+        const color = rec.cis > 55 ? COLORS.critical : rec.cis > 45 ? COLORS.high : rec.cis > 30 ? COLORS.medium : COLORS.low;
 
         const circle = L.circle([rec.lat, rec.lon], {
             radius: 600,
@@ -578,6 +605,7 @@ function initPatrolView(enforcement) {
             <div class="popup-row"><span class="popup-label">CIS Score</span><span class="popup-value">${rec.cis}</span></div>
             <div class="popup-row"><span class="popup-label">Violations</span><span class="popup-value">${rec.total_violations.toLocaleString()}</span></div>
             <div class="popup-row"><span class="popup-label">Peak Hours</span><span class="popup-value">${rec.peak_hours_str}</span></div>
+            <div class="popup-row"><span class="popup-label">Peak Demand</span><span class="popup-value">${formatNumber(rec.peak_window_daily_avg, 1)}/day</span></div>
             <div class="popup-row"><span class="popup-label">Patrol Units</span><span class="popup-value">${rec.recommended_units}</span></div>
             <div class="popup-row"><span class="popup-label">Est. Reduction</span><span class="popup-value" style="color:#06d6a0">${rec.expected_reduction_pct}%</span></div>
         `);
@@ -589,7 +617,11 @@ function initPatrolView(enforcement) {
 
     // Render patrol list
     const list = document.getElementById('patrolList');
+    list.innerHTML = '';
     enforcement.forEach((rec, i) => {
+        const playbook = playbookMap.get(rec.station);
+        const tags = playbook?.reason_tags || [];
+        const tagHtml = tags.map(tag => `<span class="patrol-tag">${tag}</span>`).join('');
         const item = document.createElement('div');
         item.className = 'patrol-item';
         item.innerHTML = `
@@ -600,8 +632,10 @@ function initPatrolView(enforcement) {
             <div class="patrol-item-details">
                 <span class="patrol-item-detail">🕐 ${rec.peak_hours_str}</span>
                 <span class="patrol-item-detail">🚔 ${rec.recommended_units} units</span>
+                <span class="patrol-item-detail">${formatNumber(rec.peak_window_daily_avg, 1)}/day peak</span>
                 <span class="patrol-item-detail" style="color:${COLORS.low}">↓${rec.expected_reduction_pct}%</span>
             </div>
+            <div class="patrol-tags">${tagHtml}</div>
         `;
         item.addEventListener('click', () => {
             patrolMap.flyTo([rec.lat, rec.lon], 14, { duration: 1 });
@@ -613,6 +647,42 @@ function initPatrolView(enforcement) {
     document.getElementById('totalZones').textContent = enforcement.length;
     document.getElementById('estCoverage').textContent = totalViolations.toLocaleString() + ' violations';
     document.getElementById('projReduction').textContent = (totalReduction / enforcement.length).toFixed(0) + '% avg';
+
+    initBudgetSimulator(opsBrief);
+}
+
+function initBudgetSimulator(opsBrief) {
+    if (!opsBrief || !opsBrief.budget_scenarios) return;
+    operationsBriefData = opsBrief;
+
+    const slider = document.getElementById('budgetSlider');
+    if (!slider) return;
+
+    const renderCurrent = () => renderBudgetScenario(Number(slider.value));
+    slider.addEventListener('input', renderCurrent);
+    renderCurrent();
+}
+
+function renderBudgetScenario(budget) {
+    const scenarios = operationsBriefData?.budget_scenarios || [];
+    const scenario = scenarios.find(s => Number(s.budget_units) === Number(budget)) || scenarios[0];
+    if (!scenario) return;
+
+    document.getElementById('budgetUnits').textContent = `${scenario.budget_units} units`;
+    document.getElementById('scenarioZones').textContent = scenario.zones_covered;
+    document.getElementById('scenarioDemand').textContent =
+        `${formatNumber(scenario.covered_peak_violations_per_day, 1)}`;
+    document.getElementById('scenarioReduction').textContent =
+        `${formatNumber(scenario.modeled_weekly_reduction)}`;
+
+    const deployments = document.getElementById('scenarioDeployments');
+    deployments.innerHTML = scenario.deployments.slice(0, 4).map(dep => `
+        <div class="deployment-row">
+            <span class="deployment-units">${dep.units}</span>
+            <span class="deployment-station">${dep.station}</span>
+            <span class="deployment-window">${dep.peak_window}</span>
+        </div>
+    `).join('');
 }
 
 // ============================================================
@@ -754,7 +824,7 @@ const TOUR_STEPS = [
     },
     {
         title: '🚔 Patrol Planner',
-        text: 'AI-optimized enforcement recommendations based on our novel Congestion Impact Score (CIS). Each zone shows optimal patrol hours, required units, and projected violation reduction.',
+        text: 'AI-optimized enforcement recommendations based on our Congestion Impact Score (CIS). The patrol budget simulator shows how coverage changes with 5, 10, 15, or 20 units.',
         view: 'patrol',
     },
     {
@@ -822,9 +892,10 @@ async function init() {
     console.log('Data loaded:', Object.keys(data).filter(k => data[k]).join(', '));
 
     renderKPIs(data.stats, data.hotspots);
+    renderOpsBrief(data.operationsBrief);
     initMap(data.heatmap, data.hotspots, data.hourlyAnim);
     renderAnalytics(data.temporal);
-    initPatrolView(data.enforcement);
+    initPatrolView(data.enforcement, data.operationsBrief);
     renderForecasts(data.forecasts);
 
     console.log('SignalFlow — Ready ✅');

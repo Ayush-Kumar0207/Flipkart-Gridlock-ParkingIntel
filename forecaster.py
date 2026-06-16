@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import json
 import os
+import math
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
@@ -16,6 +17,9 @@ try:
 except ImportError:
     HAS_XGB = False
     from sklearn.ensemble import GradientBoostingRegressor
+
+
+TRAFFIC_IMPACT_HOURS = set(range(7, 13)) | set(range(16, 20))
 
 
 def build_forecasting_features(daily_df):
@@ -180,20 +184,30 @@ def generate_enforcement_recommendations(df, impact_data, output_dir='dashboard/
         if len(station_df) == 0:
             continue
 
-        # Find peak hours
-        hourly = station_df.groupby('hour_ist').size()
-        peak_hours = hourly.nlargest(3).index.tolist()
-        peak_hours_str = ', '.join([f"{h}:00" for h in sorted(peak_hours)])
+        # Find traffic-impact peak hours. Cast to ints because CSV reloads nullable
+        # hours as floats. Theme 1 is congestion-focused, so the recommender
+        # favors commuter/commercial windows over late-night enforcement.
+        impact_window_df = station_df[station_df['hour_ist'].isin(TRAFFIC_IMPACT_HOURS)]
+        hourly_source = impact_window_df if len(impact_window_df) >= 25 else station_df
+        hourly = hourly_source.dropna(subset=['hour_ist']).groupby('hour_ist').size()
+        peak_hours = [int(h) for h in hourly.nlargest(3).index.tolist()]
+        peak_hours = sorted(peak_hours)
+        peak_hours_str = ', '.join([f"{h:02d}:00" for h in peak_hours])
 
         # Find peak days
         daily = station_df.groupby('day_name').size()
         peak_day = daily.idxmax()
 
         # Estimated violations per patrol hour (based on historical)
-        avg_hourly_violations = len(station_df) / (df['date'].nunique() * 24)
+        total_days = max(df['date'].nunique(), 1)
+        avg_hourly_violations = len(station_df) / (total_days * 24)
+        peak_window_violations = station_df[station_df['hour_ist'].isin(peak_hours)]
+        peak_window_daily_avg = len(peak_window_violations) / total_days
 
         # Coverage efficiency
         main_road_pct = station_df['is_main_road_violation'].mean() * 100
+        recommended_units = max(1, min(5, math.ceil((station['cis'] / 12) + (peak_window_daily_avg / 80))))
+        expected_reduction_pct = round(min(42, 14 + station['cis'] * 0.42), 1)
 
         recommendations.append({
             'station': name,
@@ -203,11 +217,13 @@ def generate_enforcement_recommendations(df, impact_data, output_dir='dashboard/
             'peak_hours_str': peak_hours_str,
             'peak_day': peak_day,
             'avg_hourly_violations': round(avg_hourly_violations, 1),
+            'peak_window_daily_avg': round(peak_window_daily_avg, 1),
             'main_road_pct': round(main_road_pct, 1),
-            'recommended_units': max(1, min(5, station['count'] // 5000)),
-            'expected_reduction_pct': round(min(40, station['cis'] * 0.6), 1),
+            'recommended_units': recommended_units,
+            'expected_reduction_pct': expected_reduction_pct,
             'lat': station['lat'],
             'lon': station['lon'],
+            'confidence_label': station.get('confidence_label', 'High'),
         })
 
     with open(os.path.join(output_dir, 'enforcement.json'), 'w') as f:

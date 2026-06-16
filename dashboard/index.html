@@ -23,7 +23,7 @@
     <!-- Leaflet Heatmap -->
     <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
     <!-- Header -->
@@ -131,6 +131,30 @@
                     <div class="legend-item"><span class="legend-dot low"></span> Low</div>
                 </div>
 
+                <!-- Operations Brief -->
+                <div class="ops-brief-panel" id="opsBriefPanel">
+                    <div class="ops-eyebrow">Operations Brief</div>
+                    <div class="ops-brief-title" id="opsBriefTitle">Loading priority action...</div>
+                    <div class="ops-brief-grid">
+                        <div class="ops-brief-metric">
+                            <span>City Peak</span>
+                            <strong id="opsPeakWindow">—</strong>
+                        </div>
+                        <div class="ops-brief-metric">
+                            <span>Top Zone</span>
+                            <strong id="opsTopZone">—</strong>
+                        </div>
+                        <div class="ops-brief-metric">
+                            <span>Peak Demand</span>
+                            <strong id="opsDailyTarget">—</strong>
+                        </div>
+                        <div class="ops-brief-metric">
+                            <span>Modeled Reduction</span>
+                            <strong id="opsModeledReduction">—</strong>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Hotspot Detail Panel -->
                 <div class="hotspot-detail" id="hotspotDetail" style="display:none;">
                     <button class="close-btn" id="closeDetail">&times;</button>
@@ -187,6 +211,30 @@
                 <div class="patrol-sidebar">
                     <h3>🚔 Enforcement Recommendations</h3>
                     <p class="patrol-subtitle">AI-optimized patrol deployment based on Congestion Impact Scores</p>
+
+                    <div class="scenario-panel" id="scenarioPanel">
+                        <div class="scenario-header">
+                            <span>Patrol Budget Simulator</span>
+                            <strong id="budgetUnits">10 units</strong>
+                        </div>
+                        <input type="range" class="budget-slider" id="budgetSlider" min="5" max="20" value="10" step="5">
+                        <div class="scenario-metrics">
+                            <div>
+                                <span>Zones Covered</span>
+                                <strong id="scenarioZones">—</strong>
+                            </div>
+                            <div>
+                                <span>Peak Demand/Day</span>
+                                <strong id="scenarioDemand">—</strong>
+                            </div>
+                            <div>
+                                <span>Weekly Reduction</span>
+                                <strong id="scenarioReduction">—</strong>
+                            </div>
+                        </div>
+                        <div class="scenario-deployments" id="scenarioDeployments"></div>
+                    </div>
+
                     <div class="patrol-list" id="patrolList"></div>
                     <div class="patrol-summary" id="patrolSummary">
                         <div class="summary-row">
@@ -253,6 +301,6 @@
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=3"></script>
 </body>
 </html>

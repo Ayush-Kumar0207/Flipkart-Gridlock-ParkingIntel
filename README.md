@@ -42,7 +42,7 @@ Press play to watch violation patterns shift throughout the day. Notice how hots
 
 ### 🚔 View 3 — AI Patrol Planner
 
-AI-optimized enforcement recommendations powered by our novel **Congestion Impact Score (CIS)**. Each zone shows optimal patrol hours, required units, and projected violation reduction. Upparpet leads with CIS=46.6, recommending 5 patrol units during 8–10 AM for an estimated 28% reduction.
+AI-optimized enforcement recommendations powered by our reliability-adjusted **Congestion Impact Score (CIS)**. The patrol budget simulator compares 5, 10, 15, and 20-unit deployments, showing covered peak-window demand and modeled weekly reduction. The current priority action is Upparpet during 08:00–11:00 IST with 5 units, backed by high-volume repeat demand and a rising trend.
 
 ![Patrol Planner — Top 10 enforcement zones with CIS scores, optimal hours, and projected impact](assets/patrol_planner.png)
 
@@ -85,20 +85,24 @@ XGBoost-powered 7-day violation forecasting with model validation metrics. Red b
 |---------|-------------|
 | **🗺️ Hotspot Map** | HDBSCAN spatial clustering with severity-coded markers on a dark Leaflet map. Time-slider animates violation patterns across 24 hours. |
 | **📊 Analytics** | 8 interactive Chart.js visualizations: hourly patterns, day-of-week, vehicle types, violation types, weekday vs weekend, monthly trends, station rankings, daily timeline. |
-| **🚔 Patrol Planner** | AI-optimized enforcement recommendations with CIS-scored zones, optimal patrol hours, required units, and projected violation reduction. |
+| **🚔 Patrol Planner** | AI-optimized enforcement recommendations with CIS-scored zones, optimal patrol hours, required units, projected reduction, and budget scenarios. |
 | **📈 Forecasts** | XGBoost-powered 7-day violation forecasting per zone with model validation metrics and station trend indicators. |
+| **📋 Operations Brief** | Judge-facing decision layer: best first action, city peak window, station playbooks, and 5/10/15/20 unit deployment scenarios. |
 | **🎬 Auto Tour** | Built-in guided walkthrough that auto-navigates all 4 views — perfect for live demos and recorded submissions. |
 
 ### Novel: Congestion Impact Score (CIS)
 
 ```
-CIS = 0.40 × violation_density
-    + 0.25 × main_road_fraction
-    + 0.20 × heavy_vehicle_ratio
-    + 0.15 × peak_hour_concentration
+CIS = raw_score × (0.55 + 0.45 × evidence_confidence)
+
+raw_score = 0.40 × log_violation_density
+          + 0.20 × main_road_fraction
+          + 0.12 × heavy_vehicle_ratio
+          + 0.13 × peak_hour_concentration
+          + 0.15 × traffic_window_fraction
 ```
 
-A weighted composite metric that quantifies how severely each junction/zone's parking violations impact traffic flow, enabling data-driven enforcement prioritization.
+A weighted composite metric that quantifies how severely each junction/zone's parking violations impact traffic flow. The evidence-confidence adjustment prevents tiny low-sample hotspots from outranking sustained high-impact zones.
 
 ---
 
@@ -107,10 +111,11 @@ A weighted composite metric that quantifies how severely each junction/zone's pa
 | Stage | Output | Key Metrics |
 |-------|--------|-------------|
 | **Data Processing** | 298,450 records cleaned, 32 features | 27 violation types, IST conversion |
-| **Hotspot Detection** | 673 spatial clusters via HDBSCAN | 33 Critical, 305 High, 168 Medium, 167 Low |
-| **Impact Scoring** | 50 junctions + 54 stations scored | Top: Safina Plaza Junction (CIS=48.8) |
+| **Hotspot Detection** | 674 spatial clusters via HDBSCAN | 34 Critical, 303 High, 168 Medium, 169 Low |
+| **Impact Scoring** | 50 junctions + 54 stations scored | Top junction: Safina Plaza Junction (CIS=59.6) |
 | **Temporal Analysis** | 11 pattern categories | Peak hour: 10:00 IST, Busiest day: Sunday |
 | **Forecasting** | 7-day predictions per zone | R²=0.475, MAE=206.6, RMSE=245.3 |
+| **Operations Brief** | 10 station playbooks + 4 budget scenarios | City peak window: 09:00–12:00 IST (30.7% of records) |
 
 ---
 
@@ -136,7 +141,7 @@ python -m http.server 8000
 # 4. Open http://localhost:8000 in your browser
 ```
 
-> **💡 Tip:** Click the **Auto Tour** button (top-right) for a guided walkthrough of all features during your demo.
+> **💡 Tip:** Pre-generated dashboard JSON is included. A full HDBSCAN pipeline rebuild is an offline preprocessing step and can take several minutes on Windows.
 
 ---
 
@@ -151,6 +156,7 @@ Flipkart-Gridlock-ParkingIntel/
 ├── impact_scorer.py             # Congestion Impact Score computation
 ├── temporal_analyzer.py         # Temporal pattern mining
 ├── forecaster.py                # XGBoost forecasting & enforcement optimizer
+├── operations_brief.py           # Station playbooks + patrol budget scenarios
 ├── run_pipeline.py              # Single-command pipeline orchestrator
 ├── requirements.txt             # Python dependencies
 ├── README.md                    # This file
@@ -173,7 +179,8 @@ Flipkart-Gridlock-ParkingIntel/
         ├── temporal.json        # Temporal pattern data
         ├── impact_scores.json   # CIS scores per junction/station
         ├── forecasts.json       # 7-day forecast + model metrics
-        └── enforcement.json     # Patrol recommendations
+        ├── enforcement.json     # Patrol recommendations
+        └── operations_brief.json # Operations brief + budget scenarios
 ```
 
 ---

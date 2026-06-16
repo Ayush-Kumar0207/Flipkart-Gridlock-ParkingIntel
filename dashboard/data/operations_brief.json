@@ -1,0 +1,778 @@
+{
+  "city_brief": {
+    "total_violations": 298450,
+    "total_days": 151,
+    "avg_daily_violations": 1976.5,
+    "top_peak_window": {
+      "hours": [
+        9,
+        10,
+        11
+      ],
+      "label": "09:00-12:00 IST",
+      "violations": 91750,
+      "share_pct": 30.7
+    },
+    "weekend_index": 1.13,
+    "main_road_pct": 9.2,
+    "heavy_vehicle_pct": 4.2,
+    "highest_priority_station": "Upparpet"
+  },
+  "top_action": {
+    "rank": 1,
+    "station": "Upparpet",
+    "cis": 53.7,
+    "confidence_label": "High",
+    "total_violations": 34468,
+    "daily_avg": 228.3,
+    "peak_window_daily_avg": 80.1,
+    "peak_window_share": 0.351,
+    "peak_hours": [
+      8,
+      9,
+      10
+    ],
+    "peak_window": "08:00-11:00 IST",
+    "peak_day": "Sunday",
+    "recommended_units": 5,
+    "expected_reduction_pct": 36.6,
+    "modeled_daily_reduction": 29.3,
+    "modeled_weekly_reduction": 205.0,
+    "main_road_pct": 2.1,
+    "trend_pct": 61.7,
+    "lat": 12.976666,
+    "lon": 77.577388,
+    "reason_tags": [
+      "high-volume zone",
+      "tight peak window",
+      "rising trend"
+    ],
+    "top_junctions": [
+      {
+        "name": "BTP040 - Elite Junction",
+        "violations": 10718,
+        "main_road_pct": 1.0,
+        "peak_hour": 9
+      },
+      {
+        "name": "BTP044 - Sagar Theatre Junction",
+        "violations": 10049,
+        "main_road_pct": 2.6,
+        "peak_hour": 9
+      },
+      {
+        "name": "BTP058 - Subbanna Junction",
+        "violations": 4830,
+        "main_road_pct": 0.6,
+        "peak_hour": 1
+      }
+    ],
+    "priority_score": 579.45
+  },
+  "station_playbooks": [
+    {
+      "rank": 1,
+      "station": "Upparpet",
+      "cis": 53.7,
+      "confidence_label": "High",
+      "total_violations": 34468,
+      "daily_avg": 228.3,
+      "peak_window_daily_avg": 80.1,
+      "peak_window_share": 0.351,
+      "peak_hours": [
+        8,
+        9,
+        10
+      ],
+      "peak_window": "08:00-11:00 IST",
+      "peak_day": "Sunday",
+      "recommended_units": 5,
+      "expected_reduction_pct": 36.6,
+      "modeled_daily_reduction": 29.3,
+      "modeled_weekly_reduction": 205.0,
+      "main_road_pct": 2.1,
+      "trend_pct": 61.7,
+      "lat": 12.976666,
+      "lon": 77.577388,
+      "reason_tags": [
+        "high-volume zone",
+        "tight peak window",
+        "rising trend"
+      ],
+      "top_junctions": [
+        {
+          "name": "BTP040 - Elite Junction",
+          "violations": 10718,
+          "main_road_pct": 1.0,
+          "peak_hour": 9
+        },
+        {
+          "name": "BTP044 - Sagar Theatre Junction",
+          "violations": 10049,
+          "main_road_pct": 2.6,
+          "peak_hour": 9
+        },
+        {
+          "name": "BTP058 - Subbanna Junction",
+          "violations": 4830,
+          "main_road_pct": 0.6,
+          "peak_hour": 1
+        }
+      ],
+      "priority_score": 579.45
+    },
+    {
+      "rank": 2,
+      "station": "Shivajinagar",
+      "cis": 55.9,
+      "confidence_label": "High",
+      "total_violations": 28044,
+      "daily_avg": 185.7,
+      "peak_window_daily_avg": 84.1,
+      "peak_window_share": 0.453,
+      "peak_hours": [
+        9,
+        10,
+        11
+      ],
+      "peak_window": "09:00-12:00 IST",
+      "peak_day": "Sunday",
+      "recommended_units": 5,
+      "expected_reduction_pct": 37.5,
+      "modeled_daily_reduction": 31.6,
+      "modeled_weekly_reduction": 221.0,
+      "main_road_pct": 3.7,
+      "trend_pct": -51.5,
+      "lat": 12.982142,
+      "lon": 77.607041,
+      "reason_tags": [
+        "high-volume zone",
+        "tight peak window"
+      ],
+      "top_junctions": [
+        {
+          "name": "BTP051 - Safina Plaza Junction",
+          "violations": 15298,
+          "main_road_pct": 3.8,
+          "peak_hour": 10
+        },
+        {
+          "name": "BTP211 - Central Street Junction",
+          "violations": 5373,
+          "main_road_pct": 5.8,
+          "peak_hour": 10
+        },
+        {
+          "name": "BTP042 - Minsk Square Junction (CTO)",
+          "violations": 1880,
+          "main_road_pct": 0.4,
+          "peak_hour": 4
+        }
+      ],
+      "priority_score": 512.64
+    },
+    {
+      "rank": 3,
+      "station": "Malleshwaram",
+      "cis": 51.2,
+      "confidence_label": "High",
+      "total_violations": 22200,
+      "daily_avg": 147.0,
+      "peak_window_daily_avg": 57.4,
+      "peak_window_share": 0.39,
+      "peak_hours": [
+        8,
+        9,
+        10
+      ],
+      "peak_window": "08:00-11:00 IST",
+      "peak_day": "Sunday",
+      "recommended_units": 5,
+      "expected_reduction_pct": 35.5,
+      "modeled_daily_reduction": 20.4,
+      "modeled_weekly_reduction": 143.0,
+      "main_road_pct": 1.2,
+      "trend_pct": 25.7,
+      "lat": 13.005484,
+      "lon": 77.559836,
+      "reason_tags": [
+        "high-volume zone",
+        "tight peak window",
+        "rising trend"
+      ],
+      "top_junctions": [
+        {
+          "name": "BTP001 - 10th Cross, Dr. Rajkumar Road",
+          "violations": 2812,
+          "main_road_pct": 0.2,
+          "peak_hour": 10
+        },
+        {
+          "name": "BTP182 - 19th Main Junction, Rajajinagar",
+          "violations": 1091,
+          "main_road_pct": 0.2,
+          "peak_hour": 8
+        },
+        {
+          "name": "BTP026 - 1st Block Junction, Rajajinagar",
+          "violations": 1039,
+          "main_road_pct": 0.1,
+          "peak_hour": 7
+        }
+      ],
+      "priority_score": 421.14
+    },
+    {
+      "rank": 4,
+      "station": "Kodigehalli",
+      "cis": 46.2,
+      "confidence_label": "High",
+      "total_violations": 10916,
+      "daily_avg": 72.3,
+      "peak_window_daily_avg": 33.3,
+      "peak_window_share": 0.461,
+      "peak_hours": [
+        10,
+        11,
+        12
+      ],
+      "peak_window": "10:00-13:00 IST",
+      "peak_day": "Monday",
+      "recommended_units": 5,
+      "expected_reduction_pct": 33.4,
+      "modeled_daily_reduction": 11.1,
+      "modeled_weekly_reduction": 78.0,
+      "main_road_pct": 2.2,
+      "trend_pct": 90.8,
+      "lat": 13.060296,
+      "lon": 77.586265,
+      "reason_tags": [
+        "tight peak window",
+        "rising trend"
+      ],
+      "top_junctions": [],
+      "priority_score": 347.29
+    },
+    {
+      "rank": 5,
+      "station": "HAL Old Airport",
+      "cis": 53.2,
+      "confidence_label": "High",
+      "total_violations": 20819,
+      "daily_avg": 137.9,
+      "peak_window_daily_avg": 39.0,
+      "peak_window_share": 0.283,
+      "peak_hours": [
+        7,
+        8,
+        9
+      ],
+      "peak_window": "07:00-10:00 IST",
+      "peak_day": "Thursday",
+      "recommended_units": 5,
+      "expected_reduction_pct": 36.3,
+      "modeled_daily_reduction": 14.2,
+      "modeled_weekly_reduction": 99.0,
+      "main_road_pct": 30.8,
+      "trend_pct": -47.6,
+      "lat": 12.943423,
+      "lon": 77.696756,
+      "reason_tags": [
+        "high-volume zone",
+        "main-road obstruction"
+      ],
+      "top_junctions": [],
+      "priority_score": 332.23
+    },
+    {
+      "rank": 6,
+      "station": "Vijayanagara",
+      "cis": 45.9,
+      "confidence_label": "High",
+      "total_violations": 14652,
+      "daily_avg": 97.0,
+      "peak_window_daily_avg": 32.7,
+      "peak_window_share": 0.337,
+      "peak_hours": [
+        9,
+        10,
+        11
+      ],
+      "peak_window": "09:00-12:00 IST",
+      "peak_day": "Thursday",
+      "recommended_units": 5,
+      "expected_reduction_pct": 33.3,
+      "modeled_daily_reduction": 10.9,
+      "modeled_weekly_reduction": 76.0,
+      "main_road_pct": 3.1,
+      "trend_pct": 25.4,
+      "lat": 12.977795,
+      "lon": 77.542829,
+      "reason_tags": [
+        "rising trend"
+      ],
+      "top_junctions": [
+        {
+          "name": "BTP020 - Hosahalli Metro Station",
+          "violations": 4035,
+          "main_road_pct": 1.2,
+          "peak_hour": 4
+        },
+        {
+          "name": "BTP016 - 5th Main Road, RPC Layout",
+          "violations": 2464,
+          "main_road_pct": 2.0,
+          "peak_hour": 11
+        },
+        {
+          "name": "BTP027 - Modi Bridge Junction",
+          "violations": 1173,
+          "main_road_pct": 6.6,
+          "peak_hour": 8
+        }
+      ],
+      "priority_score": 284.7
+    },
+    {
+      "rank": 7,
+      "station": "City Market",
+      "cis": 47.2,
+      "confidence_label": "High",
+      "total_violations": 17646,
+      "daily_avg": 116.9,
+      "peak_window_daily_avg": 32.9,
+      "peak_window_share": 0.282,
+      "peak_hours": [
+        8,
+        9,
+        10
+      ],
+      "peak_window": "08:00-11:00 IST",
+      "peak_day": "Sunday",
+      "recommended_units": 5,
+      "expected_reduction_pct": 33.8,
+      "modeled_daily_reduction": 11.1,
+      "modeled_weekly_reduction": 78.0,
+      "main_road_pct": 3.4,
+      "trend_pct": -6.0,
+      "lat": 12.964505,
+      "lon": 77.577126,
+      "reason_tags": [
+        "heavy-vehicle mix"
+      ],
+      "top_junctions": [
+        {
+          "name": "BTP082 - KR Market Junction",
+          "violations": 10109,
+          "main_road_pct": 2.8,
+          "peak_hour": 0
+        },
+        {
+          "name": "BTP104 - Medical College Circle",
+          "violations": 1457,
+          "main_road_pct": 2.7,
+          "peak_hour": 11
+        },
+        {
+          "name": "BTP043 - Upparpet Junction",
+          "violations": 1407,
+          "main_road_pct": 0.8,
+          "peak_hour": 7
+        }
+      ],
+      "priority_score": 270.73
+    },
+    {
+      "rank": 8,
+      "station": "Rajajinagar",
+      "cis": 44.7,
+      "confidence_label": "High",
+      "total_violations": 10998,
+      "daily_avg": 72.8,
+      "peak_window_daily_avg": 23.3,
+      "peak_window_share": 0.32,
+      "peak_hours": [
+        7,
+        10,
+        11
+      ],
+      "peak_window": "07:00-12:00 IST",
+      "peak_day": "Wednesday",
+      "recommended_units": 5,
+      "expected_reduction_pct": 32.8,
+      "modeled_daily_reduction": 7.7,
+      "modeled_weekly_reduction": 54.0,
+      "main_road_pct": 7.0,
+      "trend_pct": 46.2,
+      "lat": 12.998552,
+      "lon": 77.548612,
+      "reason_tags": [
+        "heavy-vehicle mix",
+        "rising trend"
+      ],
+      "top_junctions": [
+        {
+          "name": "BTP027 - Modi Bridge Junction",
+          "violations": 2759,
+          "main_road_pct": 0.4,
+          "peak_hour": 7
+        },
+        {
+          "name": "BTP011 - RR Kalyana Mantapa, Dr. Rajkumar Road",
+          "violations": 1192,
+          "main_road_pct": 5.6,
+          "peak_hour": 3
+        },
+        {
+          "name": "BTP061 - Bhashyam Circle",
+          "violations": 972,
+          "main_road_pct": 0.2,
+          "peak_hour": 7
+        }
+      ],
+      "priority_score": 249.0
+    },
+    {
+      "rank": 9,
+      "station": "Magadi Road",
+      "cis": 43.1,
+      "confidence_label": "High",
+      "total_violations": 8558,
+      "daily_avg": 56.7,
+      "peak_window_daily_avg": 22.1,
+      "peak_window_share": 0.39,
+      "peak_hours": [
+        10,
+        11,
+        12
+      ],
+      "peak_window": "10:00-13:00 IST",
+      "peak_day": "Monday",
+      "recommended_units": 4,
+      "expected_reduction_pct": 32.1,
+      "modeled_daily_reduction": 7.1,
+      "modeled_weekly_reduction": 50.0,
+      "main_road_pct": 5.1,
+      "trend_pct": -43.6,
+      "lat": 12.974909,
+      "lon": 77.553651,
+      "reason_tags": [
+        "tight peak window"
+      ],
+      "top_junctions": [
+        {
+          "name": "BTP070 - Cholurpalya Junction, Magadi Road",
+          "violations": 2272,
+          "main_road_pct": 1.6,
+          "peak_hour": 11
+        },
+        {
+          "name": "BTP074 - Leprosy Hospital Junction",
+          "violations": 1047,
+          "main_road_pct": 7.1,
+          "peak_hour": 11
+        },
+        {
+          "name": "BTP071 - Prasanna Junction",
+          "violations": 721,
+          "main_road_pct": 1.1,
+          "peak_hour": 11
+        }
+      ],
+      "priority_score": 202.62
+    },
+    {
+      "rank": 10,
+      "station": "Mahadevapura",
+      "cis": 45.0,
+      "confidence_label": "High",
+      "total_violations": 6187,
+      "daily_avg": 41.0,
+      "peak_window_daily_avg": 12.4,
+      "peak_window_share": 0.301,
+      "peak_hours": [
+        10,
+        11,
+        12
+      ],
+      "peak_window": "10:00-13:00 IST",
+      "peak_day": "Sunday",
+      "recommended_units": 4,
+      "expected_reduction_pct": 32.9,
+      "modeled_daily_reduction": 4.1,
+      "modeled_weekly_reduction": 28.0,
+      "main_road_pct": 40.1,
+      "trend_pct": 0.0,
+      "lat": 12.993506,
+      "lon": 77.694738,
+      "reason_tags": [
+        "main-road obstruction"
+      ],
+      "top_junctions": [],
+      "priority_score": 158.46
+    }
+  ],
+  "budget_scenarios": [
+    {
+      "budget_units": 5,
+      "zones_covered": 4,
+      "covered_peak_violations_per_day": 128.8,
+      "modeled_weekly_reduction": 327.0,
+      "deployments": [
+        {
+          "station": "Upparpet",
+          "units": 2,
+          "recommended_units": 5,
+          "cis": 53.7,
+          "peak_window": "08:00-11:00 IST",
+          "modeled_weekly_reduction": 130.0
+        },
+        {
+          "station": "Shivajinagar",
+          "units": 1,
+          "recommended_units": 5,
+          "cis": 55.9,
+          "peak_window": "09:00-12:00 IST",
+          "modeled_weekly_reduction": 99.0
+        },
+        {
+          "station": "Malleshwaram",
+          "units": 1,
+          "recommended_units": 5,
+          "cis": 51.2,
+          "peak_window": "08:00-11:00 IST",
+          "modeled_weekly_reduction": 64.0
+        },
+        {
+          "station": "Kodigehalli",
+          "units": 1,
+          "recommended_units": 5,
+          "cis": 46.2,
+          "peak_window": "10:00-13:00 IST",
+          "modeled_weekly_reduction": 35.0
+        }
+      ]
+    },
+    {
+      "budget_units": 10,
+      "zones_covered": 7,
+      "covered_peak_violations_per_day": 198.3,
+      "modeled_weekly_reduction": 500.0,
+      "deployments": [
+        {
+          "station": "Upparpet",
+          "units": 3,
+          "recommended_units": 5,
+          "cis": 53.7,
+          "peak_window": "08:00-11:00 IST",
+          "modeled_weekly_reduction": 159.0
+        },
+        {
+          "station": "Shivajinagar",
+          "units": 2,
+          "recommended_units": 5,
+          "cis": 55.9,
+          "peak_window": "09:00-12:00 IST",
+          "modeled_weekly_reduction": 140.0
+        },
+        {
+          "station": "Malleshwaram",
+          "units": 1,
+          "recommended_units": 5,
+          "cis": 51.2,
+          "peak_window": "08:00-11:00 IST",
+          "modeled_weekly_reduction": 64.0
+        },
+        {
+          "station": "Kodigehalli",
+          "units": 1,
+          "recommended_units": 5,
+          "cis": 46.2,
+          "peak_window": "10:00-13:00 IST",
+          "modeled_weekly_reduction": 35.0
+        },
+        {
+          "station": "HAL Old Airport",
+          "units": 1,
+          "recommended_units": 5,
+          "cis": 53.2,
+          "peak_window": "07:00-10:00 IST",
+          "modeled_weekly_reduction": 44.0
+        },
+        {
+          "station": "Vijayanagara",
+          "units": 1,
+          "recommended_units": 5,
+          "cis": 45.9,
+          "peak_window": "09:00-12:00 IST",
+          "modeled_weekly_reduction": 34.0
+        },
+        {
+          "station": "Rajajinagar",
+          "units": 1,
+          "recommended_units": 5,
+          "cis": 44.7,
+          "peak_window": "07:00-12:00 IST",
+          "modeled_weekly_reduction": 24.0
+        }
+      ]
+    },
+    {
+      "budget_units": 15,
+      "zones_covered": 8,
+      "covered_peak_violations_per_day": 251.3,
+      "modeled_weekly_reduction": 632.0,
+      "deployments": [
+        {
+          "station": "Upparpet",
+          "units": 4,
+          "recommended_units": 5,
+          "cis": 53.7,
+          "peak_window": "08:00-11:00 IST",
+          "modeled_weekly_reduction": 183.0
+        },
+        {
+          "station": "Shivajinagar",
+          "units": 3,
+          "recommended_units": 5,
+          "cis": 55.9,
+          "peak_window": "09:00-12:00 IST",
+          "modeled_weekly_reduction": 171.0
+        },
+        {
+          "station": "Malleshwaram",
+          "units": 2,
+          "recommended_units": 5,
+          "cis": 51.2,
+          "peak_window": "08:00-11:00 IST",
+          "modeled_weekly_reduction": 90.0
+        },
+        {
+          "station": "Kodigehalli",
+          "units": 2,
+          "recommended_units": 5,
+          "cis": 46.2,
+          "peak_window": "10:00-13:00 IST",
+          "modeled_weekly_reduction": 49.0
+        },
+        {
+          "station": "HAL Old Airport",
+          "units": 1,
+          "recommended_units": 5,
+          "cis": 53.2,
+          "peak_window": "07:00-10:00 IST",
+          "modeled_weekly_reduction": 44.0
+        },
+        {
+          "station": "Vijayanagara",
+          "units": 1,
+          "recommended_units": 5,
+          "cis": 45.9,
+          "peak_window": "09:00-12:00 IST",
+          "modeled_weekly_reduction": 34.0
+        },
+        {
+          "station": "City Market",
+          "units": 1,
+          "recommended_units": 5,
+          "cis": 47.2,
+          "peak_window": "08:00-11:00 IST",
+          "modeled_weekly_reduction": 35.0
+        },
+        {
+          "station": "Rajajinagar",
+          "units": 1,
+          "recommended_units": 5,
+          "cis": 44.7,
+          "peak_window": "07:00-12:00 IST",
+          "modeled_weekly_reduction": 24.0
+        }
+      ]
+    },
+    {
+      "budget_units": 20,
+      "zones_covered": 9,
+      "covered_peak_violations_per_day": 291.0,
+      "modeled_weekly_reduction": 728.0,
+      "deployments": [
+        {
+          "station": "Upparpet",
+          "units": 5,
+          "recommended_units": 5,
+          "cis": 53.7,
+          "peak_window": "08:00-11:00 IST",
+          "modeled_weekly_reduction": 205.0
+        },
+        {
+          "station": "Shivajinagar",
+          "units": 3,
+          "recommended_units": 5,
+          "cis": 55.9,
+          "peak_window": "09:00-12:00 IST",
+          "modeled_weekly_reduction": 171.0
+        },
+        {
+          "station": "Malleshwaram",
+          "units": 3,
+          "recommended_units": 5,
+          "cis": 51.2,
+          "peak_window": "08:00-11:00 IST",
+          "modeled_weekly_reduction": 111.0
+        },
+        {
+          "station": "Kodigehalli",
+          "units": 3,
+          "recommended_units": 5,
+          "cis": 46.2,
+          "peak_window": "10:00-13:00 IST",
+          "modeled_weekly_reduction": 60.0
+        },
+        {
+          "station": "HAL Old Airport",
+          "units": 2,
+          "recommended_units": 5,
+          "cis": 53.2,
+          "peak_window": "07:00-10:00 IST",
+          "modeled_weekly_reduction": 63.0
+        },
+        {
+          "station": "Vijayanagara",
+          "units": 1,
+          "recommended_units": 5,
+          "cis": 45.9,
+          "peak_window": "09:00-12:00 IST",
+          "modeled_weekly_reduction": 34.0
+        },
+        {
+          "station": "City Market",
+          "units": 1,
+          "recommended_units": 5,
+          "cis": 47.2,
+          "peak_window": "08:00-11:00 IST",
+          "modeled_weekly_reduction": 35.0
+        },
+        {
+          "station": "Rajajinagar",
+          "units": 1,
+          "recommended_units": 5,
+          "cis": 44.7,
+          "peak_window": "07:00-12:00 IST",
+          "modeled_weekly_reduction": 24.0
+        },
+        {
+          "station": "Magadi Road",
+          "units": 1,
+          "recommended_units": 4,
+          "cis": 43.1,
+          "peak_window": "10:00-13:00 IST",
+          "modeled_weekly_reduction": 25.0
+        }
+      ]
+    }
+  ],
+  "methodology": {
+    "cis_formula": "CIS = raw_score * (0.55 + 0.45 * evidence_confidence); raw_score = 0.40*log_density + 0.20*main_road_frac + 0.12*heavy_vehicle + 0.13*peak_concentration + 0.15*traffic_window_frac",
+    "reduction_note": "Modeled reduction is a planning proxy derived from historical peak-window demand, CIS, and diminishing returns by unit coverage.",
+    "data_scope": "Bengaluru parking violation records from the organizer dataset only."
+  }
+}

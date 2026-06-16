@@ -34,7 +34,7 @@ def detect_hotspots(df, min_cluster_size=80, min_samples=20):
             min_samples=min_samples,
             metric='haversine',
             cluster_selection_method='eom',
-            core_dist_n_jobs=-1
+            core_dist_n_jobs=1
         )
         # HDBSCAN with haversine expects radians
         coords_rad = np.radians(coords)
