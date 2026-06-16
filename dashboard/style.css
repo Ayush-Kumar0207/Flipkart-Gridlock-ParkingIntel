@@ -292,10 +292,11 @@ body::before {
 
 .kpi-card {
     flex: 1;
+    min-width: 0;
     background: var(--bg-glass);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    padding: 0.6rem 1rem;
+    padding: 0.6rem 0.75rem;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -631,7 +632,7 @@ body::before {
     border: 1px solid var(--border-accent);
     border-radius: var(--radius);
     padding: 1.25rem;
-    z-index: 800;
+    z-index: 850;  /* Above ops-brief (790) */
     box-shadow: var(--shadow-card), var(--shadow-glow-blue);
     animation: slideIn 0.3s ease;
 }

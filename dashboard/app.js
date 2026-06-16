@@ -161,7 +161,18 @@ function initMap(heatmapData, hotspots, hourlyAnim) {
         zoom: 12,
         zoomControl: true,
         attributionControl: true,
+        scrollWheelZoom: false,   // Disable scroll-wheel zoom (prevents trackpad 2-finger scroll from zooming)
     });
+
+    // Re-enable zoom only on Ctrl+scroll (desktop) — pinch always works on touch
+    map.on('focus', () => { map.scrollWheelZoom.disable(); });
+    map.getContainer().addEventListener('wheel', function(e) {
+        if (e.ctrlKey) {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -1 : 1;
+            map.zoomIn(delta);
+        }
+    }, { passive: false });
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
@@ -240,10 +251,17 @@ function showHotspotDetail(h) {
         <div class="detail-item"><div class="detail-item-label">Coordinates</div><div class="detail-item-value">${h.lat.toFixed(4)}, ${h.lon.toFixed(4)}</div></div>
     `;
     panel.style.display = 'block';
+
+    // Hide ops-brief to prevent overlap
+    const opsBrief = document.querySelector('.ops-brief-panel');
+    if (opsBrief) opsBrief.style.display = 'none';
 }
 
 document.getElementById('closeDetail')?.addEventListener('click', () => {
     document.getElementById('hotspotDetail').style.display = 'none';
+    // Restore ops-brief panel
+    const opsBrief = document.querySelector('.ops-brief-panel');
+    if (opsBrief) opsBrief.style.display = '';
 });
 
 // Time slider
@@ -562,7 +580,17 @@ function initPatrolView(enforcement, opsBrief) {
     patrolMap = L.map('patrolMap', {
         center: [12.97, 77.59],
         zoom: 12,
+        scrollWheelZoom: false,   // Pinch-only zoom on touch; Ctrl+scroll on desktop
     });
+
+    // Re-enable zoom only on Ctrl+scroll (desktop)
+    patrolMap.getContainer().addEventListener('wheel', function(e) {
+        if (e.ctrlKey) {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -1 : 1;
+            patrolMap.zoomIn(delta);
+        }
+    }, { passive: false });
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; OSM &copy; CARTO',
