@@ -15,18 +15,21 @@ Theme 1 is the strongest choice because the organizer-provided parking dataset h
    CIS combines log violation density, main-road obstruction, heavy-vehicle mix, peak concentration, traffic-window share, and evidence confidence. This prevents low-sample hotspots from being over-promoted.
 
 3. **Patrol budget simulator**  
-   Judges can compare 5, 10, 15, and 20 patrol-unit scenarios and see covered peak-window demand plus modeled weekly reduction.
+   Judges can compare 5, 10, 15, and 20 patrol-unit scenarios and see the deployment route, covered peak-window demand, and modeled weekly reduction.
 
 4. **Operationally aligned time windows**  
    Recommendations focus on traffic-impact hours instead of blindly selecting late-night statistical peaks.
 
-5. **Clear Flipkart relevance**  
+5. **Clean executive view with auditability**  
+   The default Priority Lens keeps the map readable for demos, while Audit All exposes the full hotspot set when reviewers want to inspect coverage.
+
+6. **Clear Flipkart relevance**  
    Parking-induced bottlenecks affect delivery reliability, rider dwell time, route predictability, and customer promise windows in dense Bengaluru corridors.
 
 ## Demo Path
 
 1. **Hotspot Map**  
-   Open with the citywide heatmap and state the core evidence: 298,450 records, 674 detected clusters, 209,129 unique coordinates.
+   Open with the Priority Lens and state the core evidence: 298,450 records, 674 detected clusters, 209,129 unique coordinates. Briefly switch to Audit All to show that the clean view is intentional, not missing data.
 
 2. **Operations Brief on Map**  
    Point to the best first action and the city peak window: 09:00-12:00 IST accounts for 30.7% of violations.
@@ -35,7 +38,7 @@ Theme 1 is the strongest choice because the organizer-provided parking dataset h
    Show temporal peaks, station rankings, vehicle mix, and violation types. Emphasize that the system is learning enforcement timing patterns from historical data.
 
 4. **Patrol Planner**  
-   Use the budget slider. Show that the model changes deployment as resources increase, instead of producing a static top-10 list.
+   Use the budget slider. Show that the model changes deployment and redraws the route as resources increase, instead of producing a static top-10 list.
 
 5. **Forecasts**  
    Explain the 7-day forecast and model validation metrics. Keep the claim precise: this is a short-horizon planning signal, not a city traffic simulator.

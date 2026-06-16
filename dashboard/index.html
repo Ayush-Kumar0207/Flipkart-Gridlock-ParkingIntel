@@ -23,7 +23,7 @@
     <!-- Leaflet Heatmap -->
     <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=4">
+    <link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
     <!-- Header -->
@@ -131,6 +131,17 @@
                     <div class="legend-item"><span class="legend-dot low"></span> Low</div>
                 </div>
 
+                <!-- Map Lens -->
+                <div class="map-lens-panel" id="mapLensPanel">
+                    <div class="lens-title">Map Lens</div>
+                    <div class="lens-buttons">
+                        <button class="lens-btn active" data-hotspot-mode="priority">Priority</button>
+                        <button class="lens-btn" data-hotspot-mode="audit">Audit All</button>
+                    </div>
+                    <button class="lens-toggle active" id="densityToggle">Density Backdrop</button>
+                    <div class="lens-status" id="lensStatus">Loading clusters...</div>
+                </div>
+
                 <!-- Operations Brief -->
                 <div class="ops-brief-panel" id="opsBriefPanel">
                     <div class="ops-eyebrow">Operations Brief</div>
@@ -207,6 +218,11 @@
             <div class="patrol-layout">
                 <div class="patrol-map-container">
                     <div id="patrolMap" class="map"></div>
+                    <div class="route-brief" id="routeBrief">
+                        <div class="route-eyebrow">Deployment Route</div>
+                        <div class="route-title" id="routeTitle">Budget route loading...</div>
+                        <div class="route-meta" id="routeMeta">Adjust the budget slider to redraw coverage.</div>
+                    </div>
                 </div>
                 <div class="patrol-sidebar">
                     <h3>🚔 Enforcement Recommendations</h3>
@@ -301,6 +317,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=4"></script>
+    <script src="app.js?v=9"></script>
 </body>
 </html>

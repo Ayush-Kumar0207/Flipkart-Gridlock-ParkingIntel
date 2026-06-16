@@ -12,12 +12,18 @@ let patrolMap = null;
 let heatLayer = null;
 let clusterMarkers = [];
 let patrolMarkers = [];
+let patrolRouteLayer = null;
+let patrolStationLookup = new Map();
 let hourlyAnimData = {};
 let isPlaying = false;
 let playInterval = null;
 let charts = {};
 let tourStep = 0;
 let operationsBriefData = null;
+let allHotspotsData = [];
+let hotspotMode = 'priority';
+let heatVisible = true;
+const IS_CAPTURE_MODE = new URLSearchParams(window.location.search).has('shot');
 
 // Chart.js global dark theme
 Chart.defaults.color = '#8b93b3';
@@ -59,9 +65,11 @@ function configureMapWheelPan(leafletMap) {
         if (event.ctrlKey) {
             event.preventDefault();
             const direction = event.deltaY > 0 ? -1 : 1;
+            const minZoom = Number.isFinite(leafletMap.getMinZoom()) ? leafletMap.getMinZoom() : 0;
+            const maxZoom = Number.isFinite(leafletMap.getMaxZoom()) ? leafletMap.getMaxZoom() : 19;
             const nextZoom = Math.max(
-                leafletMap.getMinZoom(),
-                Math.min(leafletMap.getMaxZoom(), leafletMap.getZoom() + direction)
+                minZoom,
+                Math.min(maxZoom, leafletMap.getZoom() + direction)
             );
             leafletMap.setZoomAround(leafletMap.mouseEventToContainerPoint(event), nextZoom);
             return;
@@ -72,6 +80,10 @@ function configureMapWheelPan(leafletMap) {
         const deltaY = Math.max(-180, Math.min(180, event.deltaY));
         leafletMap.panBy([deltaX, deltaY], { animate: false });
     }, { passive: false });
+}
+
+function setHeatLayerOpacity() {
+    if (heatLayer && heatLayer._canvas) heatLayer._canvas.style.opacity = heatVisible ? '0.42' : '0';
 }
 
 // ============================================================
@@ -126,6 +138,14 @@ function switchView(viewId) {
     if (viewId === 'patrol' && patrolMap) patrolMap.invalidateSize();
 }
 
+function applyInitialViewFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const requested = params.get('view') || window.location.hash.replace('#', '');
+    if (['map', 'analytics', 'patrol', 'forecast'].includes(requested)) {
+        switchView(requested);
+    }
+}
+
 // ============================================================
 // KPI CARDS
 // ============================================================
@@ -142,6 +162,10 @@ function animateNumber(elId, target) {
     const el = document.getElementById(elId);
     if (!el) return;
     const targetNum = parseInt(target);
+    if (IS_CAPTURE_MODE) {
+        el.textContent = targetNum.toLocaleString();
+        return;
+    }
     const duration = 1200;
     const start = performance.now();
 
@@ -179,6 +203,7 @@ function renderOpsBrief(opsBrief) {
 // ============================================================
 function initMap(heatmapData, hotspots, hourlyAnim) {
     hourlyAnimData = hourlyAnim || {};
+    allHotspotsData = hotspots || [];
 
     map = L.map('map', {
         center: [12.97, 77.59],
@@ -208,7 +233,7 @@ function initMap(heatmapData, hotspots, hourlyAnim) {
             minOpacity: 0.18,
             gradient: { 0.25: '#123a7a', 0.55: '#2874F0', 0.78: '#FFE500', 1.0: '#ff8c42' },
         }).addTo(map);
-        if (heatLayer._canvas) heatLayer._canvas.style.opacity = '0.42';
+        setHeatLayerOpacity();
     }
 
     // Hotspot markers
@@ -218,15 +243,17 @@ function initMap(heatmapData, hotspots, hourlyAnim) {
 
     // Time slider
     initTimeSlider();
+    initMapLensControls();
 }
 
 function renderHotspotMarkers(hotspots) {
     clusterMarkers.forEach(m => map.removeLayer(m));
     clusterMarkers = [];
 
+    const limit = hotspotMode === 'audit' ? hotspots.length : MAX_VISIBLE_HOTSPOTS;
     const visibleHotspots = [...hotspots]
         .sort((a, b) => (a.rank || 9999) - (b.rank || 9999))
-        .slice(0, MAX_VISIBLE_HOTSPOTS);
+        .slice(0, limit);
 
     visibleHotspots.forEach(h => {
         const color = SEVERITY_COLORS[h.severity] || COLORS.low;
@@ -257,6 +284,41 @@ function renderHotspotMarkers(hotspots) {
         marker.on('click', () => showHotspotDetail(h));
         clusterMarkers.push(marker);
     });
+
+    updateMapLensStatus(visibleHotspots.length, hotspots.length);
+}
+
+function initMapLensControls() {
+    document.querySelectorAll('[data-hotspot-mode]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            hotspotMode = btn.dataset.hotspotMode;
+            document.querySelectorAll('[data-hotspot-mode]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderHotspotMarkers(allHotspotsData);
+        });
+    });
+
+    const densityToggle = document.getElementById('densityToggle');
+    densityToggle?.addEventListener('click', () => {
+        heatVisible = !heatVisible;
+        densityToggle.classList.toggle('active', heatVisible);
+        densityToggle.textContent = heatVisible ? 'Density Backdrop' : 'Density Hidden';
+        if (heatLayer && map) {
+            if (heatVisible && !map.hasLayer(heatLayer)) heatLayer.addTo(map);
+            if (!heatVisible && map.hasLayer(heatLayer)) map.removeLayer(heatLayer);
+            setHeatLayerOpacity();
+        }
+    });
+
+    updateMapLensStatus(Math.min(allHotspotsData.length, MAX_VISIBLE_HOTSPOTS), allHotspotsData.length);
+}
+
+function updateMapLensStatus(visible, total) {
+    const status = document.getElementById('lensStatus');
+    if (!status) return;
+    status.textContent = hotspotMode === 'audit'
+        ? `Auditing all ${formatNumber(total)} detected clusters`
+        : `Showing top ${formatNumber(visible)} priority clusters of ${formatNumber(total)}`;
 }
 
 function showHotspotDetail(h) {
@@ -601,6 +663,7 @@ function renderAnalytics(temporal) {
 function initPatrolView(enforcement, opsBrief) {
     if (!enforcement || enforcement.length === 0) return;
     const playbookMap = new Map((opsBrief?.station_playbooks || []).map(p => [p.station, p]));
+    patrolStationLookup = new Map(enforcement.map(rec => [rec.station, rec]));
 
     // Init patrol map
     patrolMap = L.map('patrolMap', {
@@ -732,6 +795,53 @@ function renderBudgetScenario(budget) {
             <span class="deployment-window">${dep.peak_window}</span>
         </div>
     `).join('');
+
+    renderPatrolRoute(scenario);
+}
+
+function renderPatrolRoute(scenario) {
+    if (!patrolMap || !scenario) return;
+    if (patrolRouteLayer) patrolMap.removeLayer(patrolRouteLayer);
+
+    patrolRouteLayer = L.layerGroup().addTo(patrolMap);
+    const stops = scenario.deployments
+        .map(dep => ({ dep, rec: patrolStationLookup.get(dep.station) }))
+        .filter(item => item.rec);
+    const coords = stops.map(item => [item.rec.lat, item.rec.lon]);
+
+    if (coords.length > 1) {
+        L.polyline(coords, {
+            color: COLORS.yellow,
+            weight: 3,
+            opacity: 0.72,
+            dashArray: '8 8',
+            lineCap: 'round',
+        }).addTo(patrolRouteLayer);
+    }
+
+    stops.forEach((item, index) => {
+        const { dep, rec } = item;
+        L.circleMarker([rec.lat, rec.lon], {
+            radius: 14 + Math.min(8, dep.units * 2),
+            fillColor: COLORS.yellow,
+            fillOpacity: 0.18,
+            color: COLORS.yellow,
+            weight: 2,
+            opacity: 0.9,
+        }).addTo(patrolRouteLayer).bindTooltip(
+            `${index + 1}. ${dep.station}: ${dep.units} unit${dep.units > 1 ? 's' : ''}`,
+            { direction: 'top', sticky: true }
+        );
+    });
+
+    const routeTitle = document.getElementById('routeTitle');
+    const routeMeta = document.getElementById('routeMeta');
+    if (routeTitle) {
+        routeTitle.textContent = `${scenario.budget_units} units across ${scenario.zones_covered} priority zones`;
+    }
+    if (routeMeta) {
+        routeMeta.textContent = `${formatNumber(scenario.covered_peak_violations_per_day, 1)} peak violations/day covered, ${formatNumber(scenario.modeled_weekly_reduction)} modeled weekly reduction`;
+    }
 }
 
 // ============================================================
@@ -858,7 +968,7 @@ const TOUR_STEPS = [
     },
     {
         title: '🔥 Hotspot Map',
-        text: 'The heatmap shows violation density across the city. Colored circles mark detected hotspot clusters — red for critical, orange for high, yellow for medium, green for low severity. Use the time slider to see how patterns shift throughout the day.',
+        text: 'The heatmap shows density while the Map Lens keeps the default view clean by showing priority clusters first. Switch to Audit All when judges want to verify the full set of detected hotspots.',
         view: 'map',
     },
     {
@@ -873,7 +983,7 @@ const TOUR_STEPS = [
     },
     {
         title: '🚔 Patrol Planner',
-        text: 'AI-optimized enforcement recommendations based on our Congestion Impact Score (CIS). The patrol budget simulator shows how coverage changes with 5, 10, 15, or 20 units.',
+        text: 'AI-optimized enforcement recommendations based on Congestion Impact Score. The budget slider redraws the deployment route so reviewers can see how added units expand operational coverage.',
         view: 'patrol',
     },
     {
@@ -946,6 +1056,7 @@ async function init() {
     renderAnalytics(data.temporal);
     initPatrolView(data.enforcement, data.operationsBrief);
     renderForecasts(data.forecasts);
+    applyInitialViewFromUrl();
 
     console.log('SignalFlow — Ready ✅');
 }
