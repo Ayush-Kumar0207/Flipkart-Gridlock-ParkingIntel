@@ -44,10 +44,34 @@ const COLORS = {
 };
 
 const SEVERITY_COLORS = { Critical: COLORS.critical, High: COLORS.high, Medium: COLORS.medium, Low: COLORS.low };
+const MAX_VISIBLE_HOTSPOTS = 140;
 
 function formatNumber(value, digits = 0) {
     const num = Number(value) || 0;
     return num.toLocaleString(undefined, { maximumFractionDigits: digits });
+}
+
+function configureMapWheelPan(leafletMap) {
+    const container = leafletMap.getContainer();
+    leafletMap.scrollWheelZoom.disable();
+
+    container.addEventListener('wheel', (event) => {
+        if (event.ctrlKey) {
+            event.preventDefault();
+            const direction = event.deltaY > 0 ? -1 : 1;
+            const nextZoom = Math.max(
+                leafletMap.getMinZoom(),
+                Math.min(leafletMap.getMaxZoom(), leafletMap.getZoom() + direction)
+            );
+            leafletMap.setZoomAround(leafletMap.mouseEventToContainerPoint(event), nextZoom);
+            return;
+        }
+
+        event.preventDefault();
+        const deltaX = Math.max(-180, Math.min(180, event.deltaX));
+        const deltaY = Math.max(-180, Math.min(180, event.deltaY));
+        leafletMap.panBy([deltaX, deltaY], { animate: false });
+    }, { passive: false });
 }
 
 // ============================================================
@@ -161,18 +185,12 @@ function initMap(heatmapData, hotspots, hourlyAnim) {
         zoom: 12,
         zoomControl: true,
         attributionControl: true,
-        scrollWheelZoom: false,   // Disable scroll-wheel zoom (prevents trackpad 2-finger scroll from zooming)
+        scrollWheelZoom: false,
+        wheelDebounceTime: 24,
+        zoomSnap: 0.5,
+        zoomDelta: 0.5,
     });
-
-    // Re-enable zoom only on Ctrl+scroll (desktop) — pinch always works on touch
-    map.on('focus', () => { map.scrollWheelZoom.disable(); });
-    map.getContainer().addEventListener('wheel', function(e) {
-        if (e.ctrlKey) {
-            e.preventDefault();
-            const delta = e.deltaY > 0 ? -1 : 1;
-            map.zoomIn(delta);
-        }
-    }, { passive: false });
+    configureMapWheelPan(map);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
@@ -183,12 +201,14 @@ function initMap(heatmapData, hotspots, hourlyAnim) {
     // Heatmap layer
     if (heatmapData && heatmapData.length > 0) {
         heatLayer = L.heatLayer(heatmapData, {
-            radius: 18,
-            blur: 22,
-            maxZoom: 15,
-            max: 1.0,
-            gradient: { 0.2: '#2874F0', 0.4: '#14b8a6', 0.6: '#FFE500', 0.8: '#ff8c42', 1.0: '#ff4757' },
+            radius: 24,
+            blur: 34,
+            maxZoom: 14,
+            max: 1.25,
+            minOpacity: 0.18,
+            gradient: { 0.25: '#123a7a', 0.55: '#2874F0', 0.78: '#FFE500', 1.0: '#ff8c42' },
         }).addTo(map);
+        if (heatLayer._canvas) heatLayer._canvas.style.opacity = '0.42';
     }
 
     // Hotspot markers
@@ -204,17 +224,23 @@ function renderHotspotMarkers(hotspots) {
     clusterMarkers.forEach(m => map.removeLayer(m));
     clusterMarkers = [];
 
-    hotspots.forEach(h => {
+    const visibleHotspots = [...hotspots]
+        .sort((a, b) => (a.rank || 9999) - (b.rank || 9999))
+        .slice(0, MAX_VISIBLE_HOTSPOTS);
+
+    visibleHotspots.forEach(h => {
         const color = SEVERITY_COLORS[h.severity] || COLORS.low;
-        const radius = Math.max(8, Math.min(30, Math.sqrt(h.count) * 0.8));
+        const radius = Math.max(5, Math.min(18, 4 + Math.sqrt(h.count) * 0.38));
+        const isPriority = h.severity === 'Critical' || h.severity === 'High';
 
         const marker = L.circleMarker([h.lat, h.lon], {
             radius: radius,
             fillColor: color,
-            fillOpacity: 0.35,
+            fillOpacity: isPriority ? 0.26 : 0.14,
             color: color,
-            weight: 2,
-            opacity: 0.8,
+            weight: isPriority ? 2 : 1.4,
+            opacity: isPriority ? 0.9 : 0.62,
+            bubblingMouseEvents: false,
         }).addTo(map);
 
         const popupContent = `
@@ -580,17 +606,12 @@ function initPatrolView(enforcement, opsBrief) {
     patrolMap = L.map('patrolMap', {
         center: [12.97, 77.59],
         zoom: 12,
-        scrollWheelZoom: false,   // Pinch-only zoom on touch; Ctrl+scroll on desktop
+        scrollWheelZoom: false,
+        wheelDebounceTime: 24,
+        zoomSnap: 0.5,
+        zoomDelta: 0.5,
     });
-
-    // Re-enable zoom only on Ctrl+scroll (desktop)
-    patrolMap.getContainer().addEventListener('wheel', function(e) {
-        if (e.ctrlKey) {
-            e.preventDefault();
-            const delta = e.deltaY > 0 ? -1 : 1;
-            patrolMap.zoomIn(delta);
-        }
-    }, { passive: false });
+    configureMapWheelPan(patrolMap);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; OSM &copy; CARTO',
