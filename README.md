@@ -6,6 +6,14 @@
 
 ---
 
+## 🔗 Quick Links
+
+- **Live Demo:** https://ayush-kumar0207.github.io/Flipkart-Gridlock-ParkingIntel/
+- **Judge Brief:** [JUDGING_BRIEF.md](JUDGING_BRIEF.md)
+- **Run Locally:** `cd dashboard && python -m http.server 8000`
+
+---
+
 ## 🎯 Problem Statement
 
 *How can AI-driven parking intelligence detect illegal parking hotspots and quantify their impact on traffic flow to enable targeted enforcement?*
@@ -24,7 +32,7 @@ SignalFlow transforms **298,450 real parking violation records** from Bengaluru 
 
 HDBSCAN-detected violation clusters overlaid on a dark Leaflet map with a subtle density backdrop. The default Priority Lens keeps the judge view clean, while Audit All mode exposes the full cluster set for verification. The bottom time-slider animates violations across a full 24-hour cycle.
 
-![Hotspot Map — 673 clusters detected across Bengaluru, color-coded by severity](assets/hotspot_map.png)
+![Hotspot Map — 674 clusters detected across Bengaluru with a clean Priority Lens and operations brief](assets/hotspot_map.png)
 
 ### ⏱️ Time Animation (24-Hour Cycle)
 
@@ -44,7 +52,7 @@ Press play to watch violation patterns shift throughout the day. Notice how hots
 
 AI-optimized enforcement recommendations powered by our reliability-adjusted **Congestion Impact Score (CIS)**. The patrol budget simulator compares 5, 10, 15, and 20-unit deployments, redraws the deployment route on the map, and adds a deployment frontier so reviewers can see marginal weekly gain as patrol capacity increases. The current priority action is Upparpet during 08:00–11:00 IST with 5 units, backed by high-volume repeat demand and a rising trend.
 
-![Patrol Planner — Top 10 enforcement zones with CIS scores, optimal hours, and projected impact](assets/patrol_planner.png)
+![Patrol Planner — route-aware deployment simulator with budget frontier and marginal-gain view](assets/patrol_planner.png)
 
 ### 📈 View 4 — Violation Forecasts
 
