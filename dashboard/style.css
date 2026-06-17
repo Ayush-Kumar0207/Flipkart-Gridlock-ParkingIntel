@@ -987,6 +987,97 @@ body::before {
     text-overflow: ellipsis;
 }
 
+.frontier-panel {
+    background: rgba(5, 10, 31, 0.36);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-xs);
+    padding: 0.58rem;
+    margin-bottom: 0.72rem;
+}
+
+.frontier-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.6rem;
+    align-items: center;
+    margin-bottom: 0.45rem;
+    font-size: 0.56rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.frontier-header strong {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--fk-yellow);
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: nowrap;
+}
+
+.frontier-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 0.36rem;
+}
+
+.frontier-row {
+    display: grid;
+    grid-template-columns: 42px minmax(82px, 1fr) 68px;
+    gap: 0.42rem;
+    align-items: center;
+    min-height: 25px;
+    padding: 0.22rem 0.28rem;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.025);
+    cursor: pointer;
+    transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.frontier-row:hover,
+.frontier-row.active {
+    border-color: rgba(255, 229, 0, 0.34);
+    background: rgba(255, 229, 0, 0.06);
+}
+
+.frontier-row.active {
+    transform: translateX(2px);
+}
+
+.frontier-budget,
+.frontier-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    white-space: nowrap;
+}
+
+.frontier-budget {
+    color: var(--text-primary);
+}
+
+.frontier-value {
+    color: var(--text-dim);
+    text-align: right;
+}
+
+.frontier-track {
+    display: block;
+    height: 7px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.frontier-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--fk-blue), var(--fk-yellow));
+    box-shadow: 0 0 12px rgba(255, 229, 0, 0.2);
+}
+
 .scenario-deployments {
     display: flex;
     flex-direction: column;

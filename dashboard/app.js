@@ -134,16 +134,29 @@ function switchView(viewId) {
     document.getElementById(`view-${viewId}`).classList.add('active');
 
     // Lazy-init maps
-    if (viewId === 'map' && map) map.invalidateSize();
+    if (viewId !== 'map' && map && heatLayer && map.hasLayer(heatLayer)) {
+        map.removeLayer(heatLayer);
+    }
+    if (viewId === 'map' && map) {
+        requestAnimationFrame(() => {
+            map.invalidateSize();
+            if (heatVisible && heatLayer && !map.hasLayer(heatLayer)) {
+                heatLayer.addTo(map);
+                setHeatLayerOpacity();
+            }
+        });
+    }
     if (viewId === 'patrol' && patrolMap) patrolMap.invalidateSize();
 }
 
-function applyInitialViewFromUrl() {
+function getRequestedView() {
     const params = new URLSearchParams(window.location.search);
     const requested = params.get('view') || window.location.hash.replace('#', '');
-    if (['map', 'analytics', 'patrol', 'forecast'].includes(requested)) {
-        switchView(requested);
-    }
+    return ['map', 'analytics', 'patrol', 'forecast'].includes(requested) ? requested : 'map';
+}
+
+function applyInitialViewFromUrl() {
+    switchView(getRequestedView());
 }
 
 // ============================================================
@@ -232,8 +245,13 @@ function initMap(heatmapData, hotspots, hourlyAnim) {
             max: 1.25,
             minOpacity: 0.18,
             gradient: { 0.25: '#123a7a', 0.55: '#2874F0', 0.78: '#FFE500', 1.0: '#ff8c42' },
-        }).addTo(map);
-        setHeatLayerOpacity();
+        });
+        if (getRequestedView() === 'map') {
+            requestAnimationFrame(() => {
+                heatLayer.addTo(map);
+                setHeatLayerOpacity();
+            });
+        }
     }
 
     // Hotspot markers
@@ -775,8 +793,13 @@ function initBudgetSimulator(opsBrief) {
     renderCurrent();
 }
 
+function getBudgetScenarios() {
+    return [...(operationsBriefData?.budget_scenarios || [])]
+        .sort((a, b) => Number(a.budget_units) - Number(b.budget_units));
+}
+
 function renderBudgetScenario(budget) {
-    const scenarios = operationsBriefData?.budget_scenarios || [];
+    const scenarios = getBudgetScenarios();
     const scenario = scenarios.find(s => Number(s.budget_units) === Number(budget)) || scenarios[0];
     if (!scenario) return;
 
@@ -796,7 +819,46 @@ function renderBudgetScenario(budget) {
         </div>
     `).join('');
 
+    renderDeploymentFrontier(scenarios, scenario);
     renderPatrolRoute(scenario);
+}
+
+function renderDeploymentFrontier(scenarios, activeScenario) {
+    const bars = document.getElementById('frontierBars');
+    const marginal = document.getElementById('frontierMarginal');
+    const slider = document.getElementById('budgetSlider');
+    if (!bars || !marginal || !activeScenario || scenarios.length === 0) return;
+
+    const maxReduction = Math.max(...scenarios.map(s => Number(s.modeled_weekly_reduction) || 0), 1);
+    const activeIndex = scenarios.findIndex(s => Number(s.budget_units) === Number(activeScenario.budget_units));
+    const previous = activeIndex > 0 ? scenarios[activeIndex - 1] : null;
+    const gain = previous
+        ? Number(activeScenario.modeled_weekly_reduction) - Number(previous.modeled_weekly_reduction)
+        : Number(activeScenario.modeled_weekly_reduction);
+    marginal.textContent = previous
+        ? `+${formatNumber(gain)}/wk`
+        : `${formatNumber(gain)}/wk base`;
+
+    bars.innerHTML = scenarios.map(s => {
+        const reduction = Number(s.modeled_weekly_reduction) || 0;
+        const width = Math.max(8, Math.round((reduction / maxReduction) * 100));
+        const isActive = Number(s.budget_units) === Number(activeScenario.budget_units);
+        return `
+            <button class="frontier-row${isActive ? ' active' : ''}" type="button" data-budget="${s.budget_units}" aria-label="Show ${s.budget_units} unit deployment">
+                <span class="frontier-budget">${s.budget_units}u</span>
+                <span class="frontier-track"><span class="frontier-fill" style="width:${width}%"></span></span>
+                <span class="frontier-value">${formatNumber(reduction)}/wk</span>
+            </button>
+        `;
+    }).join('');
+
+    bars.querySelectorAll('.frontier-row').forEach(row => {
+        row.addEventListener('click', () => {
+            const nextBudget = Number(row.dataset.budget);
+            if (slider) slider.value = nextBudget;
+            renderBudgetScenario(nextBudget);
+        });
+    });
 }
 
 function renderPatrolRoute(scenario) {
@@ -840,7 +902,8 @@ function renderPatrolRoute(scenario) {
         routeTitle.textContent = `${scenario.budget_units} units across ${scenario.zones_covered} priority zones`;
     }
     if (routeMeta) {
-        routeMeta.textContent = `${formatNumber(scenario.covered_peak_violations_per_day, 1)} peak violations/day covered, ${formatNumber(scenario.modeled_weekly_reduction)} modeled weekly reduction`;
+        const frontierText = document.getElementById('frontierMarginal')?.textContent || 'frontier updated';
+        routeMeta.textContent = `${formatNumber(scenario.covered_peak_violations_per_day, 1)} peak violations/day covered, ${formatNumber(scenario.modeled_weekly_reduction)} weekly reduction, ${frontierText} marginal gain`;
     }
 }
 

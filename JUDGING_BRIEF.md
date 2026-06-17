@@ -14,8 +14,8 @@ Theme 1 is the strongest choice because the organizer-provided parking dataset h
 2. **Reliability-adjusted impact scoring**  
    CIS combines log violation density, main-road obstruction, heavy-vehicle mix, peak concentration, traffic-window share, and evidence confidence. This prevents low-sample hotspots from being over-promoted.
 
-3. **Patrol budget simulator**  
-   Judges can compare 5, 10, 15, and 20 patrol-unit scenarios and see the deployment route, covered peak-window demand, and modeled weekly reduction.
+3. **Patrol budget simulator with deployment frontier**  
+   Judges can compare 5, 10, 15, and 20 patrol-unit scenarios, see the deployment route, and inspect marginal weekly gain as capacity increases.
 
 4. **Operationally aligned time windows**  
    Recommendations focus on traffic-impact hours instead of blindly selecting late-night statistical peaks.
@@ -38,7 +38,7 @@ Theme 1 is the strongest choice because the organizer-provided parking dataset h
    Show temporal peaks, station rankings, vehicle mix, and violation types. Emphasize that the system is learning enforcement timing patterns from historical data.
 
 4. **Patrol Planner**  
-   Use the budget slider. Show that the model changes deployment and redraws the route as resources increase, instead of producing a static top-10 list.
+   Use the budget slider and the deployment frontier. Show that the model changes deployment, redraws the route, and exposes marginal gain as resources increase instead of producing a static top-10 list.
 
 5. **Forecasts**  
    Explain the 7-day forecast and model validation metrics. Keep the claim precise: this is a short-horizon planning signal, not a city traffic simulator.
@@ -47,7 +47,7 @@ Theme 1 is the strongest choice because the organizer-provided parking dataset h
 
 - "We converted raw violation logs into a city operations layer."
 - "The score is reliability-adjusted, so the model does not chase tiny noisy hotspots."
-- "The patrol planner is budget-aware, which makes it usable by enforcement teams."
+- "The patrol planner is budget-aware and shows marginal gain, which makes it usable by enforcement teams."
 - "All recommendations are generated from the organizer dataset; no external data dependency is required."
 - "The method is extensible: if speed, road width, or live camera feeds are later added, the same scoring layer can absorb them."
 
@@ -63,4 +63,4 @@ Use this framing in Q&A: "We are not claiming direct travel-time reduction from 
 - Keep `dashboard/data/*.json` included for instant demo loading.
 - Mention the full HDBSCAN rebuild is offline preprocessing and can take several minutes.
 - Use Auto Tour only if time is tight; otherwise drive the demo manually through the path above.
-- In the deck/video, show the patrol budget simulator because it is the most operational differentiator.
+- In the deck/video, show the patrol budget simulator and deployment frontier because they are the most operational differentiators.

@@ -42,7 +42,7 @@ Press play to watch violation patterns shift throughout the day. Notice how hots
 
 ### 🚔 View 3 — AI Patrol Planner
 
-AI-optimized enforcement recommendations powered by our reliability-adjusted **Congestion Impact Score (CIS)**. The patrol budget simulator compares 5, 10, 15, and 20-unit deployments, redraws the deployment route on the map, and shows covered peak-window demand plus modeled weekly reduction. The current priority action is Upparpet during 08:00–11:00 IST with 5 units, backed by high-volume repeat demand and a rising trend.
+AI-optimized enforcement recommendations powered by our reliability-adjusted **Congestion Impact Score (CIS)**. The patrol budget simulator compares 5, 10, 15, and 20-unit deployments, redraws the deployment route on the map, and adds a deployment frontier so reviewers can see marginal weekly gain as patrol capacity increases. The current priority action is Upparpet during 08:00–11:00 IST with 5 units, backed by high-volume repeat demand and a rising trend.
 
 ![Patrol Planner — Top 10 enforcement zones with CIS scores, optimal hours, and projected impact](assets/patrol_planner.png)
 
@@ -85,7 +85,7 @@ XGBoost-powered 7-day violation forecasting with model validation metrics. Red b
 |---------|-------------|
 | **🗺️ Hotspot Map** | HDBSCAN spatial clustering with priority/audit lenses, severity-coded markers, and 24-hour time animation. |
 | **📊 Analytics** | 8 interactive Chart.js visualizations: hourly patterns, day-of-week, vehicle types, violation types, weekday vs weekend, monthly trends, station rankings, daily timeline. |
-| **🚔 Patrol Planner** | AI-optimized enforcement recommendations with CIS-scored zones, optimal patrol hours, required units, projected reduction, budget scenarios, and route overlay. |
+| **🚔 Patrol Planner** | AI-optimized enforcement recommendations with CIS-scored zones, optimal patrol hours, required units, projected reduction, route overlay, and a clickable deployment frontier. |
 | **📈 Forecasts** | XGBoost-powered 7-day violation forecasting per zone with model validation metrics and station trend indicators. |
 | **📋 Operations Brief** | Judge-facing decision layer: best first action, city peak window, station playbooks, and 5/10/15/20 unit deployment scenarios. |
 | **🎬 Auto Tour** | Built-in guided walkthrough that auto-navigates all 4 views — perfect for live demos and recorded submissions. |

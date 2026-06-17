@@ -23,7 +23,7 @@
     <!-- Leaflet Heatmap -->
     <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=9">
+    <link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
     <!-- Header -->
@@ -248,6 +248,13 @@
                                 <strong id="scenarioReduction">—</strong>
                             </div>
                         </div>
+                        <div class="frontier-panel" id="frontierPanel">
+                            <div class="frontier-header">
+                                <span>Deployment Frontier</span>
+                                <strong id="frontierMarginal">—</strong>
+                            </div>
+                            <div class="frontier-bars" id="frontierBars"></div>
+                        </div>
                         <div class="scenario-deployments" id="scenarioDeployments"></div>
                     </div>
 
@@ -317,6 +324,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=9"></script>
+    <script src="app.js?v=10"></script>
 </body>
 </html>
