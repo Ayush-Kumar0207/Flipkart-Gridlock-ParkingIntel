@@ -2,7 +2,10 @@
   "model_metrics": {
     "mae": 206.6,
     "rmse": 245.3,
-    "r2": 0.475
+    "r2": 0.475,
+    "mape": 11.7,
+    "mae_pct": 11.3,
+    "avg_actual": 1829.2
   },
   "forecast": {
     "dates": [

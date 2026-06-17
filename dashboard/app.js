@@ -916,10 +916,11 @@ function renderForecasts(forecasts) {
     // Model metrics
     if (forecasts.model_metrics) {
         const m = forecasts.model_metrics;
-        document.querySelector('#metricMAE .metric-value').textContent = m.mae;
-        document.querySelector('#metricRMSE .metric-value').textContent = m.rmse;
-        document.querySelector('#metricR2 .metric-value').textContent = m.r2;
-        document.getElementById('modelBadge').textContent = `R² = ${m.r2}`;
+        const avgError = m.mae_pct ?? m.mape;
+        document.querySelector('#metricMAE .metric-value').textContent = formatNumber(m.mae, 1);
+        document.querySelector('#metricRMSE .metric-value').textContent = formatNumber(m.rmse, 1);
+        document.querySelector('#metricR2 .metric-value').textContent = avgError ? `${formatNumber(avgError, 1)}%` : m.r2;
+        document.getElementById('modelBadge').textContent = avgError ? `Avg error ${formatNumber(avgError, 1)}%` : `R² = ${m.r2}`;
     }
 
     // 7-day forecast chart
@@ -1051,7 +1052,7 @@ const TOUR_STEPS = [
     },
     {
         title: '📈 Forecasts',
-        text: 'XGBoost-powered violation forecasting predicts daily violation counts per zone. Station trend indicators highlight areas with increasing violation pressure requiring proactive attention.',
+        text: 'The forecast view shows a short-horizon planning signal with validation error, historical fit, and station trend indicators for proactive enforcement.',
         view: 'forecast',
     },
 ];

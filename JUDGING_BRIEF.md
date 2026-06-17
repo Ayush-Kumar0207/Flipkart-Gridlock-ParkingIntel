@@ -41,7 +41,7 @@ Theme 1 is the strongest choice because the organizer-provided parking dataset h
    Use the budget slider and the deployment frontier. Show that the model changes deployment, redraws the route, and exposes marginal gain as resources increase instead of producing a static top-10 list.
 
 5. **Forecasts**  
-   Explain the 7-day forecast and model validation metrics. Keep the claim precise: this is a short-horizon planning signal, not a city traffic simulator.
+   Explain the 7-day forecast and validation error. Keep the claim precise: this is a short-horizon planning signal, not a city traffic simulator.
 
 ## Strongest Talking Points
 
@@ -54,6 +54,8 @@ Theme 1 is the strongest choice because the organizer-provided parking dataset h
 ## Known Limitation and Safe Framing
 
 The dataset contains parking violation records, not direct traffic speed or delay measurements. SignalFlow therefore estimates **congestion impact risk**, not measured traffic delay. This is why CIS uses defensible proxy features: main-road parking, heavy vehicles, peak-window concentration, spatial density, and evidence confidence.
+
+The 7-day forecast should be framed as a planning signal. The dashboard foregrounds average validation error because it is easier for judges to interpret operationally: a roughly 11% daily-count error is useful for staffing and patrol planning, while R² can look modest on noisy daily enforcement data.
 
 Use this framing in Q&A: "We are not claiming direct travel-time reduction from this dataset alone. We are prioritizing enforcement where parking violations are most likely to create congestion."
 

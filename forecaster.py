@@ -93,8 +93,10 @@ def train_forecast_model(df):
     mae = mean_absolute_error(y_test, y_pred)
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
     r2 = r2_score(y_test, y_pred)
+    mape = np.mean(np.abs(y_test - y_pred) / np.maximum(y_test, 1)) * 100
+    mae_pct = mae / max(np.mean(y_test), 1) * 100
 
-    print(f"[Forecaster] Validation MAE: {mae:.1f}, RMSE: {rmse:.1f}, R²: {r2:.3f}")
+    print(f"[Forecaster] Validation MAE: {mae:.1f}, RMSE: {rmse:.1f}, R²: {r2:.3f}, Avg Error: {mae_pct:.1f}%")
 
     # Generate 7-day forecast
     last_known = feat_df.iloc[-1:].copy()
@@ -153,7 +155,14 @@ def train_forecast_model(df):
     }
 
     return {
-        'model_metrics': {'mae': round(mae, 1), 'rmse': round(rmse, 1), 'r2': round(r2, 3)},
+        'model_metrics': {
+            'mae': round(mae, 1),
+            'rmse': round(rmse, 1),
+            'r2': round(r2, 3),
+            'mape': round(mape, 1),
+            'mae_pct': round(mae_pct, 1),
+            'avg_actual': round(float(np.mean(y_test)), 1),
+        },
         'forecast': {'dates': forecast_dates, 'values': forecast_values},
         'station_forecasts': station_forecasts,
         'historical': historical,
@@ -242,7 +251,7 @@ def run_forecasting(df, output_dir='dashboard/data'):
     with open(os.path.join(output_dir, 'forecasts.json'), 'w') as f:
         json.dump(forecast_data, f, indent=2)
 
-    print(f"[Forecaster] ✅ Exported forecast data to forecasts.json")
+    print("[Forecaster] [OK] Exported forecast data to forecasts.json")
     return forecast_data
 
 
