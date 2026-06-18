@@ -705,6 +705,65 @@ body::before {
     background: var(--bg-deepest) !important;
 }
 
+.leaflet-container.basemap-offline {
+    background:
+        linear-gradient(120deg, rgba(40, 116, 240, 0.08), transparent 38%),
+        radial-gradient(circle at 32% 42%, rgba(255, 229, 0, 0.08), transparent 24%),
+        var(--bg-deepest) !important;
+    background-size: auto, auto, auto !important;
+}
+
+.offline-basemap-badge {
+    max-width: 270px;
+    padding: 0.55rem 0.65rem;
+    background: rgba(5, 8, 22, 0.88);
+    border: 1px solid rgba(255, 229, 0, 0.28);
+    border-radius: var(--radius-xs);
+    box-shadow: var(--shadow-card);
+    color: var(--text-secondary);
+    font: 600 0.62rem 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.35;
+}
+
+.offline-basemap-badge strong,
+.offline-basemap-badge span {
+    display: block;
+}
+
+.offline-basemap-badge strong {
+    margin-bottom: 0.12rem;
+    color: var(--fk-yellow);
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.offline-map-label {
+    display: grid !important;
+    place-items: center;
+    padding: 0 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    background: rgba(5, 8, 22, 0.74);
+    color: rgba(232, 234, 246, 0.84);
+    box-shadow: 0 0 18px rgba(40, 116, 240, 0.11);
+    font: 800 0.62rem 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    letter-spacing: 0;
+    white-space: nowrap;
+}
+
+.offline-map-label-city {
+    border-color: rgba(255, 229, 0, 0.34);
+    color: var(--fk-yellow);
+    font-size: 0.78rem;
+}
+
+.offline-map-label-note {
+    border-color: rgba(90, 156, 245, 0.18);
+    color: var(--text-dim);
+    font-size: 0.56rem;
+}
+
 .leaflet-control-zoom a {
     background: var(--bg-surface) !important;
     color: var(--text-primary) !important;
@@ -1092,14 +1151,19 @@ body::before {
 /* ============================
    VIEW 2: ANALYTICS
    ============================ */
+#view-analytics {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
 .analytics-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
     padding: 0.75rem 1.25rem;
-    min-height: 100%;
+    min-height: auto;
     padding-bottom: 2rem;
-    overflow-y: auto;
+    overflow: visible;
 }
 
 .chart-card {

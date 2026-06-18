@@ -10,7 +10,7 @@
 
 - **Live Demo:** https://ayush-kumar0207.github.io/Flipkart-Gridlock-ParkingIntel/
 - **Judge Brief:** [JUDGING_BRIEF.md](JUDGING_BRIEF.md)
-- **Run Locally:** `cd dashboard && python -m http.server 8000`
+- **Run Locally:** `cd dashboard && python -m http.server 8000` then open `http://localhost:8000?offline=1`
 
 ---
 
@@ -133,7 +133,7 @@ A weighted composite metric that quantifies how severely each junction/zone's pa
 
 ### Prerequisites
 - Python 3.9+
-- Modern web browser with internet connection (for map tiles)
+- Modern web browser. The reviewer demo is self-contained; external map tiles are optional and have a local fallback.
 
 ### Setup & Run
 
@@ -148,10 +148,13 @@ python run_pipeline.py
 cd dashboard
 python -m http.server 8000
 
-# 4. Open http://localhost:8000 in your browser
+# 4. Open the fully local reviewer path
+http://localhost:8000?offline=1
 ```
 
 > **💡 Tip:** Pre-generated dashboard JSON is included. A full HDBSCAN pipeline rebuild is an offline preprocessing step and can take several minutes on Windows.
+>
+> **Offline judging:** Leaflet, Leaflet.heat, Chart.js, and Leaflet's image assets are vendored under `dashboard/vendor/`. The dashboard can use live Carto tiles when available, but it automatically switches to a local schematic basemap on `?offline=1`, browser offline events, failed tile requests, or tile timeout.
 
 ---
 
@@ -181,6 +184,7 @@ Flipkart-Gridlock-ParkingIntel/
     ├── index.html               # Dashboard UI (4 views + tour)
     ├── style.css                # Dark glassmorphism theme
     ├── app.js                   # Interactive logic + animations
+    ├── vendor/                  # Vendored frontend libraries for offline judging
     └── data/                    # Pre-generated JSON (from pipeline)
         ├── stats.json           # KPI summary
         ├── hotspots.json        # 673 cluster definitions
@@ -205,8 +209,8 @@ Flipkart-Gridlock-ParkingIntel/
 | **Maps** | Leaflet.js + Leaflet.heat |
 | **Charts** | Chart.js 4 |
 | **Frontend** | Vanilla HTML/CSS/JS |
-| **Map Tiles** | CartoDB Dark Matter |
-| **Typography** | Inter, JetBrains Mono (Google Fonts) |
+| **Map Tiles** | CartoDB Dark Matter when online, local schematic fallback when offline |
+| **Typography** | Inter / JetBrains Mono with system fallbacks |
 
 ---
 

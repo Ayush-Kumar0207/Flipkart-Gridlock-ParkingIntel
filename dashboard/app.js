@@ -55,6 +55,34 @@ const COLORS = {
 
 const SEVERITY_COLORS = { Critical: COLORS.critical, High: COLORS.high, Medium: COLORS.medium, Low: COLORS.low };
 const MAX_VISIBLE_HOTSPOTS = 140;
+const BASEMAP_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+const BASEMAP_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
+const BASEMAP_TIMEOUT_MS = 3500;
+const OFFLINE_BASEMAP_BOUNDS = [[12.76, 77.40], [13.19, 77.82]];
+const OFFLINE_STREETS = [
+    { weight: 3.4, opacity: 0.18, coords: [[12.82, 77.46], [12.89, 77.51], [12.94, 77.55], [12.98, 77.60], [13.03, 77.65], [13.10, 77.70]] },
+    { weight: 3.0, opacity: 0.16, coords: [[13.13, 77.48], [13.08, 77.53], [13.02, 77.58], [12.96, 77.62], [12.89, 77.66]] },
+    { weight: 2.8, opacity: 0.16, coords: [[12.95, 77.41], [12.96, 77.49], [12.965, 77.56], [12.985, 77.63], [13.02, 77.72]] },
+    { weight: 2.6, opacity: 0.15, coords: [[13.16, 77.61], [13.10, 77.61], [13.04, 77.62], [12.98, 77.61], [12.91, 77.60]] },
+    { weight: 2.4, opacity: 0.14, coords: [[12.86, 77.73], [12.91, 77.68], [12.96, 77.65], [13.00, 77.60], [13.05, 77.55]] },
+    { weight: 2.2, opacity: 0.13, coords: [[12.86, 77.50], [12.91, 77.54], [12.96, 77.58], [13.02, 77.60], [13.08, 77.62]] },
+    { weight: 1.5, opacity: 0.10, coords: [[12.80, 77.56], [12.86, 77.57], [12.92, 77.58], [12.99, 77.58], [13.06, 77.57], [13.14, 77.56]] },
+    { weight: 1.5, opacity: 0.10, coords: [[12.79, 77.66], [12.86, 77.65], [12.93, 77.64], [13.00, 77.64], [13.08, 77.65], [13.16, 77.66]] },
+    { weight: 1.4, opacity: 0.10, coords: [[12.91, 77.43], [12.92, 77.50], [12.94, 77.56], [12.95, 77.62], [12.96, 77.70]] },
+    { weight: 1.4, opacity: 0.10, coords: [[13.07, 77.43], [13.05, 77.50], [13.04, 77.57], [13.03, 77.64], [13.02, 77.75]] },
+    { weight: 1.2, opacity: 0.08, coords: [[12.83, 77.42], [12.88, 77.46], [12.93, 77.49], [12.99, 77.52], [13.05, 77.54]] },
+    { weight: 1.2, opacity: 0.08, coords: [[12.88, 77.78], [12.93, 77.73], [12.98, 77.68], [13.04, 77.63], [13.11, 77.59]] },
+    { weight: 1.1, opacity: 0.075, coords: [[12.78, 77.49], [12.84, 77.53], [12.90, 77.56], [12.96, 77.60], [13.02, 77.66]] },
+    { weight: 1.1, opacity: 0.075, coords: [[12.82, 77.72], [12.88, 77.68], [12.94, 77.63], [13.00, 77.58], [13.07, 77.52]] },
+];
+const OFFLINE_LABELS = [
+    { text: 'Bengaluru', lat: 12.9716, lon: 77.5946, kind: 'city' },
+    { text: 'CBD / MG Road', lat: 12.978, lon: 77.615, kind: 'zone' },
+    { text: 'Yeshwanthpur', lat: 13.025, lon: 77.54, kind: 'zone' },
+    { text: 'Koramangala', lat: 12.935, lon: 77.625, kind: 'zone' },
+    { text: 'Whitefield Axis', lat: 12.99, lon: 77.72, kind: 'zone' },
+    { text: 'Offline schematic basemap', lat: 12.785, lon: 77.435, kind: 'note' },
+];
 
 function formatNumber(value, digits = 0) {
     const num = Number(value) || 0;
@@ -253,6 +281,187 @@ function setHeatLayerOpacity() {
     if (heatLayer && heatLayer._canvas) heatLayer._canvas.style.opacity = heatVisible ? '0.26' : '0';
 }
 
+function isOfflineBasemapRequested() {
+    const params = new URLSearchParams(window.location.search);
+    return params.has('offline') || params.get('basemap') === 'offline' || navigator.onLine === false;
+}
+
+function createOfflineLabel(text, kind) {
+    const width = Math.min(190, Math.max(78, text.length * 7 + 24));
+    return L.divIcon({
+        className: `offline-map-label offline-map-label-${kind}`,
+        html: escapeHtml(text),
+        iconSize: [width, kind === 'city' ? 28 : 22],
+        iconAnchor: [width / 2, kind === 'city' ? 14 : 11],
+    });
+}
+
+function addOfflineStreet(group, pathOptions, coords, weight = 1, opacity = 0.08) {
+    L.polyline(coords, {
+        ...pathOptions,
+        color: `rgba(148, 163, 184, ${opacity})`,
+        weight,
+        lineCap: 'round',
+        lineJoin: 'round',
+    }).addTo(group);
+}
+
+function renderOfflineStreetTexture(group, pathOptions) {
+    OFFLINE_STREETS.forEach(street => {
+        addOfflineStreet(group, pathOptions, street.coords, street.weight, street.opacity);
+    });
+
+    const centerLat = 12.9716;
+    const centerLon = 77.5946;
+
+    // Dense neutral street texture for offline judging. It is intentionally
+    // approximate and muted so data overlays remain the visual priority.
+    for (let i = 0; i < 34; i++) {
+        const angle = -Math.PI + (i / 34) * Math.PI * 2;
+        const length = 0.11 + (i % 5) * 0.018;
+        const coords = [];
+        for (let step = 0; step <= 7; step++) {
+            const t = step / 7;
+            const bend = Math.sin(t * Math.PI * 2 + i * 0.8) * 0.008;
+            coords.push([
+                centerLat + Math.sin(angle) * length * t + Math.sin(angle + Math.PI / 2) * bend,
+                centerLon + Math.cos(angle) * length * t + Math.cos(angle + Math.PI / 2) * bend,
+            ]);
+        }
+        addOfflineStreet(group, pathOptions, coords, i % 4 === 0 ? 1.4 : 0.9, i % 4 === 0 ? 0.11 : 0.065);
+    }
+
+    [0.035, 0.062, 0.092, 0.128, 0.165].forEach((radius, ringIndex) => {
+        const coords = [];
+        for (let i = 0; i <= 72; i++) {
+            const theta = (i / 72) * Math.PI * 2;
+            const wobble = 1 + Math.sin(theta * 3 + ringIndex) * 0.08;
+            coords.push([
+                centerLat + Math.sin(theta) * radius * wobble,
+                centerLon + Math.cos(theta) * radius * wobble * 1.32,
+            ]);
+        }
+        addOfflineStreet(group, pathOptions, coords, ringIndex < 2 ? 1.2 : 0.8, ringIndex < 2 ? 0.09 : 0.055);
+    });
+
+    for (let i = 0; i < 15; i++) {
+        const lat = 12.80 + i * 0.024;
+        const coords = [];
+        for (let step = 0; step <= 9; step++) {
+            const t = step / 9;
+            coords.push([
+                lat + Math.sin(t * Math.PI * 2 + i) * 0.006,
+                77.43 + t * 0.35,
+            ]);
+        }
+        addOfflineStreet(group, pathOptions, coords, 0.7, 0.045);
+    }
+
+    for (let i = 0; i < 15; i++) {
+        const lon = 77.43 + i * 0.025;
+        const coords = [];
+        for (let step = 0; step <= 9; step++) {
+            const t = step / 9;
+            coords.push([
+                12.80 + t * 0.36,
+                lon + Math.cos(t * Math.PI * 2 + i * 0.7) * 0.006,
+            ]);
+        }
+        addOfflineStreet(group, pathOptions, coords, 0.7, 0.04);
+    }
+}
+
+function createOfflineBasemapLayer(leafletMap) {
+    const containerId = leafletMap.getContainer().id || 'signalflow';
+    const paneName = `${containerId}-offline-basemap`;
+    let pane = leafletMap.getPane(paneName);
+    if (!pane) {
+        pane = leafletMap.createPane(paneName);
+        pane.style.zIndex = 210;
+        pane.style.pointerEvents = 'none';
+    }
+
+    const group = L.layerGroup();
+    const pathOptions = { pane: paneName, interactive: false };
+
+    L.rectangle(OFFLINE_BASEMAP_BOUNDS, {
+        ...pathOptions,
+        color: 'rgba(90, 156, 245, 0.24)',
+        weight: 1,
+        fillColor: '#071226',
+        fillOpacity: 0.62,
+    }).addTo(group);
+
+    renderOfflineStreetTexture(group, pathOptions);
+
+    OFFLINE_LABELS.forEach(label => {
+        L.marker([label.lat, label.lon], {
+            pane: paneName,
+            interactive: false,
+            keyboard: false,
+            icon: createOfflineLabel(label.text, label.kind),
+        }).addTo(group);
+    });
+
+    return group;
+}
+
+function createOfflineBasemapStatus(mapLabel) {
+    const control = L.control({ position: 'bottomleft' });
+    control.onAdd = () => {
+        const el = L.DomUtil.create('div', 'offline-basemap-badge');
+        el.innerHTML = `<strong>Offline basemap</strong><span>${escapeHtml(mapLabel)} is using a local schematic; data overlays remain exact.</span>`;
+        return el;
+    };
+    return control;
+}
+
+function installBasemap(leafletMap, mapLabel) {
+    const offlineLayer = createOfflineBasemapLayer(leafletMap);
+    const offlineStatus = createOfflineBasemapStatus(mapLabel);
+    const container = leafletMap.getContainer();
+    let tileLayer = null;
+    let basemapLoaded = false;
+    let fallbackActive = false;
+    let timeoutId = null;
+
+    const activateFallback = (reason) => {
+        if (fallbackActive) return;
+        fallbackActive = true;
+        window.clearTimeout(timeoutId);
+        if (tileLayer && leafletMap.hasLayer(tileLayer)) leafletMap.removeLayer(tileLayer);
+        if (!leafletMap.hasLayer(offlineLayer)) offlineLayer.addTo(leafletMap);
+        if (!offlineStatus._map) offlineStatus.addTo(leafletMap);
+        container.classList.add('basemap-offline');
+        console.warn(`${mapLabel}: using offline basemap (${reason}).`);
+    };
+
+    if (isOfflineBasemapRequested()) {
+        activateFallback('offline mode requested');
+        return { activateFallback };
+    }
+
+    tileLayer = L.tileLayer(BASEMAP_TILE_URL, {
+        attribution: BASEMAP_ATTRIBUTION,
+        subdomains: 'abcd',
+        maxZoom: 19,
+    });
+
+    tileLayer.on('load', () => {
+        basemapLoaded = true;
+        window.clearTimeout(timeoutId);
+    });
+    tileLayer.on('tileerror', () => activateFallback('external tile request failed'));
+    tileLayer.addTo(leafletMap);
+
+    timeoutId = window.setTimeout(() => {
+        if (!basemapLoaded) activateFallback('external tile request timed out');
+    }, BASEMAP_TIMEOUT_MS);
+
+    window.addEventListener('offline', () => activateFallback('browser went offline'), { once: true });
+    return { activateFallback };
+}
+
 // ============================================================
 // DATA LOADING
 // ============================================================
@@ -397,11 +606,7 @@ function initMap(heatmapData, hotspots, hourlyAnim) {
     });
     configureMapWheelPan(map);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 19,
-    }).addTo(map);
+    installBasemap(map, 'Hotspot map');
 
     // Heatmap layer
     if (heatmapData && heatmapData.length > 0) {
@@ -1125,11 +1330,7 @@ function initPatrolView(enforcement, opsBrief) {
     });
     configureMapWheelPan(patrolMap);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OSM &copy; CARTO',
-        subdomains: 'abcd',
-        maxZoom: 19,
-    }).addTo(patrolMap);
+    installBasemap(patrolMap, 'Patrol planner');
 
     // Add patrol zone markers
     let totalViolations = 0;
