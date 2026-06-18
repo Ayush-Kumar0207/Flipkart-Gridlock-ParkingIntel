@@ -173,6 +173,143 @@ def train_forecast_model(df):
     }
 
 
+def train_station_day_model(df):
+    """Validate a station-day model using only organizer-provided records.
+
+    The citywide model has only ~151 daily points. This station-day view turns
+    the same approved dataset into many time-aware examples by forecasting each
+    police station's next daily violation count from its own lag history.
+    """
+    print("[Forecaster] Training station-day validation model...")
+
+    station_df = df.dropna(subset=['date', 'police_station']).copy()
+    station_df['date'] = pd.to_datetime(station_df['date'])
+
+    stations = sorted(station_df['police_station'].astype(str).unique())
+    dates = pd.date_range(station_df['date'].min(), station_df['date'].max(), freq='D')
+
+    counts = (
+        station_df.groupby(['date', 'police_station'])
+        .size()
+        .rename('count')
+        .reset_index()
+    )
+
+    grid = pd.MultiIndex.from_product(
+        [dates, stations],
+        names=['date', 'police_station']
+    ).to_frame(index=False)
+    model_df = grid.merge(counts, on=['date', 'police_station'], how='left')
+    model_df['count'] = model_df['count'].fillna(0).astype(float)
+    model_df = model_df.sort_values(['police_station', 'date']).reset_index(drop=True)
+
+    grouped = model_df.groupby('police_station')['count']
+    for lag in [1, 2, 3, 7, 14, 21, 28]:
+        model_df[f'station_lag_{lag}'] = grouped.shift(lag)
+
+    shifted = grouped.shift(1)
+    for window in [3, 7, 14, 28]:
+        model_df[f'station_roll_mean_{window}'] = (
+            shifted.groupby(model_df['police_station'])
+            .rolling(window)
+            .mean()
+            .reset_index(level=0, drop=True)
+        )
+        model_df[f'station_roll_std_{window}'] = (
+            shifted.groupby(model_df['police_station'])
+            .rolling(window)
+            .std()
+            .reset_index(level=0, drop=True)
+        )
+
+    model_df['station_history_mean'] = grouped.transform(
+        lambda s: s.shift(1).expanding(min_periods=7).mean()
+    )
+    model_df['station_history_std'] = grouped.transform(
+        lambda s: s.shift(1).expanding(min_periods=7).std()
+    )
+
+    model_df['station_code'] = pd.Categorical(model_df['police_station']).codes
+    model_df['day_of_week'] = model_df['date'].dt.dayofweek
+    model_df['is_weekend'] = model_df['day_of_week'].isin([5, 6]).astype(int)
+    model_df['month'] = model_df['date'].dt.month
+    model_df['day_of_month'] = model_df['date'].dt.day
+    model_df['week_of_year'] = model_df['date'].dt.isocalendar().week.astype(int)
+    model_df['dow_sin'] = np.sin(2 * np.pi * model_df['day_of_week'] / 7)
+    model_df['dow_cos'] = np.cos(2 * np.pi * model_df['day_of_week'] / 7)
+    model_df['recent_vs_baseline'] = (
+        model_df['station_roll_mean_7'] / model_df['station_history_mean'].replace(0, np.nan)
+    )
+
+    model_df = model_df.replace([np.inf, -np.inf], np.nan).dropna().reset_index(drop=True)
+    if model_df.empty:
+        return None
+
+    unique_dates = sorted(model_df['date'].unique())
+    split_date = unique_dates[int(len(unique_dates) * 0.8)]
+    train_mask = model_df['date'] < split_date
+    test_mask = model_df['date'] >= split_date
+
+    feature_cols = [
+        c for c in model_df.columns
+        if c not in ['date', 'police_station', 'count']
+    ]
+    X_train = model_df.loc[train_mask, feature_cols].values
+    y_train = model_df.loc[train_mask, 'count'].values
+    X_test = model_df.loc[test_mask, feature_cols].values
+    y_test = model_df.loc[test_mask, 'count'].values
+
+    if len(X_train) == 0 or len(X_test) == 0:
+        return None
+
+    if HAS_XGB:
+        model = XGBRegressor(
+            n_estimators=360,
+            max_depth=4,
+            learning_rate=0.04,
+            subsample=0.85,
+            colsample_bytree=0.85,
+            reg_lambda=8,
+            random_state=42,
+            verbosity=0,
+            n_jobs=1,
+        )
+    else:
+        model = GradientBoostingRegressor(
+            n_estimators=260,
+            max_depth=4,
+            learning_rate=0.04,
+            subsample=0.85,
+            random_state=42,
+        )
+
+    model.fit(X_train, y_train)
+    y_pred = np.maximum(0, model.predict(X_test))
+
+    mae = mean_absolute_error(y_test, y_pred)
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+    r2 = r2_score(y_test, y_pred)
+
+    print(
+        f"[Forecaster] Station-day MAE: {mae:.1f}, "
+        f"RMSE: {rmse:.1f}, R²: {r2:.3f}, rows: {len(model_df)}"
+    )
+
+    return {
+        'r2': round(float(r2), 3),
+        'mae': round(float(mae), 1),
+        'rmse': round(float(rmse), 1),
+        'avg_actual': round(float(np.mean(y_test)), 1),
+        'rows': int(len(model_df)),
+        'train_rows': int(len(X_train)),
+        'test_rows': int(len(X_test)),
+        'stations': int(len(stations)),
+        'split_date': pd.Timestamp(split_date).strftime('%Y-%m-%d'),
+        'model': 'XGBoost station-day' if HAS_XGB else 'GradientBoosting station-day',
+        'note': 'Station-day validation uses station identity, calendar features, and lag/rolling history from the provided violation dataset only.',
+    }
+
+
 def generate_enforcement_recommendations(df, impact_data, output_dir='dashboard/data'):
     """Generate patrol deployment recommendations based on CIS and temporal patterns."""
     print("[Forecaster] Generating enforcement recommendations...")
@@ -247,6 +384,9 @@ def run_forecasting(df, output_dir='dashboard/data'):
     os.makedirs(output_dir, exist_ok=True)
 
     forecast_data = train_forecast_model(df)
+    station_metrics = train_station_day_model(df)
+    if station_metrics:
+        forecast_data['station_model_metrics'] = station_metrics
 
     with open(os.path.join(output_dir, 'forecasts.json'), 'w') as f:
         json.dump(forecast_data, f, indent=2)

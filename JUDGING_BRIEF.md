@@ -23,7 +23,10 @@ Theme 1 is the strongest choice because the organizer-provided parking dataset h
 5. **Clean executive view with auditability**  
    The default Priority Lens keeps the map readable for demos, while Audit All exposes the full hotspot set when reviewers want to inspect coverage.
 
-6. **Clear Flipkart relevance**  
+6. **Dataset-native command search**  
+   Judges can search a station, junction, or hotspot and immediately see the linked playbook: CIS, recommended units, peak window, evidence junctions, and station forecast.
+
+7. **Clear Flipkart relevance**  
    Parking-induced bottlenecks affect delivery reliability, rider dwell time, route predictability, and customer promise windows in dense Bengaluru corridors.
 
 ## Demo Path
@@ -34,20 +37,24 @@ Theme 1 is the strongest choice because the organizer-provided parking dataset h
 2. **Operations Brief on Map**  
    Point to the best first action and the city peak window: 09:00-12:00 IST accounts for 30.7% of violations.
 
-3. **Analytics**  
+3. **Command Search**  
+   Type `Upparpet` or a visible junction name. Show that SignalFlow jumps from raw map evidence to a station playbook with units, peak window, evidence junctions, and 7-day station forecast.
+
+4. **Analytics**  
    Show temporal peaks, station rankings, vehicle mix, and violation types. Emphasize that the system is learning enforcement timing patterns from historical data.
 
-4. **Patrol Planner**  
+5. **Patrol Planner**  
    Use the budget slider and the deployment frontier. Show that the model changes deployment, redraws the route, and exposes marginal gain as resources increase instead of producing a static top-10 list.
 
-5. **Forecasts**  
-   Explain the 7-day forecast and validation error. Keep the claim precise: this is a short-horizon planning signal, not a city traffic simulator.
+6. **Forecasts**  
+   Explain the 7-day forecast, average citywide error, and station-day validation. Keep the claim precise: this is a short-horizon planning signal, not a city traffic simulator.
 
 ## Strongest Talking Points
 
 - "We converted raw violation logs into a city operations layer."
 - "The score is reliability-adjusted, so the model does not chase tiny noisy hotspots."
 - "The patrol planner is budget-aware and shows marginal gain, which makes it usable by enforcement teams."
+- "The search box is not a cosmetic feature; it is a command layer that turns any station or junction into an evidence-backed action card."
 - "All recommendations are generated from the organizer dataset; no external data dependency is required."
 - "The method is extensible: if speed, road width, or live camera feeds are later added, the same scoring layer can absorb them."
 
@@ -55,7 +62,9 @@ Theme 1 is the strongest choice because the organizer-provided parking dataset h
 
 The dataset contains parking violation records, not direct traffic speed or delay measurements. SignalFlow therefore estimates **congestion impact risk**, not measured traffic delay. This is why CIS uses defensible proxy features: main-road parking, heavy vehicles, peak-window concentration, spatial density, and evidence confidence.
 
-The 7-day forecast should be framed as a planning signal. The dashboard foregrounds average validation error because it is easier for judges to interpret operationally: a roughly 11% daily-count error is useful for staffing and patrol planning, while R² can look modest on noisy daily enforcement data.
+The 7-day citywide forecast should be framed as a planning signal. The dashboard foregrounds average validation error because it is easier for judges to interpret operationally: a roughly 11% daily-count error is useful for staffing and patrol planning, while R² can look modest on noisy daily enforcement data.
+
+The stronger model-quality proof is the station-day validation layer: the same organizer dataset becomes 6,642 station-day examples across 54 police stations, producing R²=0.641 with time-aware lag and rolling features. Use this to answer model-quality questions, but keep the product story focused on prioritization and patrol allocation.
 
 Use this framing in Q&A: "We are not claiming direct travel-time reduction from this dataset alone. We are prioritizing enforcement where parking violations are most likely to create congestion."
 

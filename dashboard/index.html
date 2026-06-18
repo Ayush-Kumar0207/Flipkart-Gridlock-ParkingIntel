@@ -23,7 +23,7 @@
     <!-- Leaflet Heatmap -->
     <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 
-    <link rel="stylesheet" href="style.css?v=10">
+    <link rel="stylesheet" href="style.css?v=11">
 </head>
 <body>
     <!-- Header -->
@@ -106,6 +106,24 @@
         <section class="view active" id="view-map">
             <div class="map-container">
                 <div id="map" class="map"></div>
+
+                <!-- Dataset-native Search / Command Center -->
+                <div class="command-panel" id="commandPanel">
+                    <div class="command-eyebrow">Command Search</div>
+                    <input id="zoneSearchInput" class="zone-search-input" type="search" placeholder="Search station, junction, or hotspot">
+                    <div class="zone-search-results" id="zoneSearchResults"></div>
+                </div>
+
+                <div class="zone-command-panel" id="zoneCommandPanel" style="display:none;">
+                    <button class="close-btn" id="closeZoneCommand">&times;</button>
+                    <div class="zone-command-type" id="zoneCommandType">Station Playbook</div>
+                    <h3 id="zoneCommandTitle">Zone selected</h3>
+                    <p id="zoneCommandSummary"></p>
+                    <div class="zone-command-grid" id="zoneCommandGrid"></div>
+                    <div class="zone-command-tags" id="zoneCommandTags"></div>
+                    <div class="zone-command-junctions" id="zoneCommandJunctions"></div>
+                    <button class="zone-command-action" id="zoneCommandPatrol">Open in Patrol Planner</button>
+                </div>
 
                 <!-- Time Slider -->
                 <div class="time-slider-panel" id="timeSliderPanel">
@@ -304,6 +322,10 @@
                         <div class="metric-label">Avg Error</div>
                         <div class="metric-value">—</div>
                     </div>
+                    <div class="metric-card" id="metricStationR2">
+                        <div class="metric-label">Station-Day R²</div>
+                        <div class="metric-value">—</div>
+                    </div>
                     <h3 style="margin-top:1.5rem;">Station Trends</h3>
                     <div class="station-trends" id="stationTrends"></div>
                 </div>
@@ -324,6 +346,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=10"></script>
+    <script src="app.js?v=12"></script>
 </body>
 </html>

@@ -270,5 +270,18 @@
     "week_of_year": 0.0071,
     "dow_sin": 0.0524,
     "dow_cos": 0.0795
+  },
+  "station_model_metrics": {
+    "r2": 0.641,
+    "mae": 17.6,
+    "rmse": 31.7,
+    "avg_actual": 33.2,
+    "rows": 6642,
+    "train_rows": 5292,
+    "test_rows": 1350,
+    "stations": 54,
+    "split_date": "2024-03-15",
+    "model": "XGBoost station-day",
+    "note": "Station-day validation uses station identity, calendar features, and lag/rolling history from the provided violation dataset only."
   }
 }

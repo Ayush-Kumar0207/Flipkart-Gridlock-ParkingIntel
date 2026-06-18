@@ -31,6 +31,7 @@ SignalFlow transforms **298,450 real parking violation records** from Bengaluru 
 ### 🗺️ View 1 — Hotspot Map
 
 HDBSCAN-detected violation clusters overlaid on a dark Leaflet map with a subtle density backdrop. The default Priority Lens keeps the judge view clean, while Audit All mode exposes the full cluster set for verification. The bottom time-slider animates violations across a full 24-hour cycle.
+The command search lets reviewers jump directly to a police station, junction, or hotspot and see the linked station playbook.
 
 ![Hotspot Map — 674 clusters detected across Bengaluru with a clean Priority Lens and operations brief](assets/hotspot_map.png)
 
@@ -56,9 +57,9 @@ AI-optimized enforcement recommendations powered by our reliability-adjusted **C
 
 ### 📈 View 4 — Violation Forecasts
 
-XGBoost-powered 7-day violation forecasting with model validation metrics. Red bars highlight predicted above-average days. Station trend indicators flag zones with increasing violation pressure (↑) requiring proactive attention.
+XGBoost-powered 7-day violation forecasting with model validation metrics. The citywide forecast is framed as a staffing signal, while the station-day validation layer uses 6,642 station-day rows and reaches R²=0.641. Station trend indicators flag zones with increasing violation pressure (↑) requiring proactive attention.
 
-![7-Day Forecast with model metrics — MAE: 206.6, RMSE: 245.3, R²: 0.475](assets/forecasts.png)
+![7-Day Forecast with citywide error metrics and station-day validation](assets/forecasts.png)
 
 ---
 
@@ -92,6 +93,7 @@ XGBoost-powered 7-day violation forecasting with model validation metrics. Red b
 | Feature | Description |
 |---------|-------------|
 | **🗺️ Hotspot Map** | HDBSCAN spatial clustering with priority/audit lenses, severity-coded markers, and 24-hour time animation. |
+| **🔎 Command Search** | Dataset-native station, junction, and hotspot lookup with playbooks, evidence junctions, and 7-day station forecasts. |
 | **📊 Analytics** | 8 interactive Chart.js visualizations: hourly patterns, day-of-week, vehicle types, violation types, weekday vs weekend, monthly trends, station rankings, daily timeline. |
 | **🚔 Patrol Planner** | AI-optimized enforcement recommendations with CIS-scored zones, optimal patrol hours, required units, projected reduction, route overlay, and a clickable deployment frontier. |
 | **📈 Forecasts** | XGBoost-powered 7-day violation forecasting per zone with model validation metrics and station trend indicators. |
@@ -122,7 +124,7 @@ A weighted composite metric that quantifies how severely each junction/zone's pa
 | **Hotspot Detection** | 674 spatial clusters via HDBSCAN | 34 Critical, 303 High, 168 Medium, 169 Low |
 | **Impact Scoring** | 50 junctions + 54 stations scored | Top junction: Safina Plaza Junction (CIS=59.6) |
 | **Temporal Analysis** | 11 pattern categories | Peak hour: 10:00 IST, Busiest day: Sunday |
-| **Forecasting** | 7-day predictions per zone | R²=0.475, MAE=206.6, RMSE=245.3 |
+| **Forecasting** | Citywide + station-day demand signals | Citywide avg error=11.3%; station-day R²=0.641 across 6,642 rows |
 | **Operations Brief** | 10 station playbooks + 4 budget scenarios | City peak window: 09:00–12:00 IST (30.7% of records) |
 
 ---
@@ -186,7 +188,7 @@ Flipkart-Gridlock-ParkingIntel/
         ├── hourly_animation.json # Per-hour animation frames
         ├── temporal.json        # Temporal pattern data
         ├── impact_scores.json   # CIS scores per junction/station
-        ├── forecasts.json       # 7-day forecast + model metrics
+        ├── forecasts.json       # 7-day forecast + city/station validation metrics
         ├── enforcement.json     # Patrol recommendations
         └── operations_brief.json # Operations brief + budget scenarios
 ```

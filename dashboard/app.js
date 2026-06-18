@@ -23,6 +23,9 @@ let operationsBriefData = null;
 let allHotspotsData = [];
 let hotspotMode = 'priority';
 let heatVisible = true;
+let zoneSearchIndex = [];
+let selectedCommandItem = null;
+let commandHighlightLayer = null;
 const IS_CAPTURE_MODE = new URLSearchParams(window.location.search).has('shot');
 
 // Chart.js global dark theme
@@ -57,6 +60,15 @@ function formatNumber(value, digits = 0) {
     return num.toLocaleString(undefined, { maximumFractionDigits: digits });
 }
 
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 function configureMapWheelPan(leafletMap) {
     const container = leafletMap.getContainer();
     leafletMap.scrollWheelZoom.disable();
@@ -83,7 +95,7 @@ function configureMapWheelPan(leafletMap) {
 }
 
 function setHeatLayerOpacity() {
-    if (heatLayer && heatLayer._canvas) heatLayer._canvas.style.opacity = heatVisible ? '0.42' : '0';
+    if (heatLayer && heatLayer._canvas) heatLayer._canvas.style.opacity = heatVisible ? '0.26' : '0';
 }
 
 // ============================================================
@@ -239,12 +251,12 @@ function initMap(heatmapData, hotspots, hourlyAnim) {
     // Heatmap layer
     if (heatmapData && heatmapData.length > 0) {
         heatLayer = L.heatLayer(heatmapData, {
-            radius: 24,
-            blur: 34,
+            radius: 20,
+            blur: 30,
             maxZoom: 14,
-            max: 1.25,
-            minOpacity: 0.18,
-            gradient: { 0.25: '#123a7a', 0.55: '#2874F0', 0.78: '#FFE500', 1.0: '#ff8c42' },
+            max: 1.45,
+            minOpacity: 0.08,
+            gradient: { 0.28: '#102858', 0.58: '#2874F0', 0.84: '#FFE500', 1.0: '#ffb020' },
         });
         if (getRequestedView() === 'map') {
             requestAnimationFrame(() => {
@@ -275,16 +287,16 @@ function renderHotspotMarkers(hotspots) {
 
     visibleHotspots.forEach(h => {
         const color = SEVERITY_COLORS[h.severity] || COLORS.low;
-        const radius = Math.max(5, Math.min(18, 4 + Math.sqrt(h.count) * 0.38));
+        const radius = Math.max(4.5, Math.min(15, 3.8 + Math.sqrt(h.count) * 0.32));
         const isPriority = h.severity === 'Critical' || h.severity === 'High';
 
         const marker = L.circleMarker([h.lat, h.lon], {
             radius: radius,
             fillColor: color,
-            fillOpacity: isPriority ? 0.26 : 0.14,
+            fillOpacity: isPriority ? 0.2 : 0.1,
             color: color,
-            weight: isPriority ? 2 : 1.4,
-            opacity: isPriority ? 0.9 : 0.62,
+            weight: isPriority ? 1.8 : 1.2,
+            opacity: isPriority ? 0.86 : 0.58,
             bubblingMouseEvents: false,
         }).addTo(map);
 
@@ -342,6 +354,8 @@ function updateMapLensStatus(visible, total) {
 function showHotspotDetail(h) {
     const panel = document.getElementById('hotspotDetail');
     const grid = document.getElementById('detailGrid');
+    const commandPanel = document.getElementById('zoneCommandPanel');
+    if (commandPanel) commandPanel.style.display = 'none';
     document.getElementById('detailTitle').textContent = `Hotspot #${h.rank}`;
 
     grid.innerHTML = `
@@ -369,6 +383,268 @@ document.getElementById('closeDetail')?.addEventListener('click', () => {
     const opsBrief = document.querySelector('.ops-brief-panel');
     if (opsBrief) opsBrief.style.display = '';
 });
+
+// Dataset-native search and station command card
+function initCommandCenter(opsBrief, hotspots, forecasts) {
+    const input = document.getElementById('zoneSearchInput');
+    const results = document.getElementById('zoneSearchResults');
+    const closeBtn = document.getElementById('closeZoneCommand');
+    const patrolBtn = document.getElementById('zoneCommandPatrol');
+    if (!input || !results) return;
+
+    zoneSearchIndex = buildZoneSearchIndex(opsBrief, hotspots, forecasts);
+
+    input.addEventListener('input', () => renderZoneSearchResults(input.value));
+    input.addEventListener('focus', () => {
+        const zonePanel = document.getElementById('zoneCommandPanel');
+        if (zonePanel) zonePanel.style.display = 'none';
+        if (commandHighlightLayer && map) {
+            map.removeLayer(commandHighlightLayer);
+            commandHighlightLayer = null;
+        }
+        const opsBriefPanel = document.querySelector('.ops-brief-panel');
+        if (opsBriefPanel) opsBriefPanel.style.display = 'none';
+        renderZoneSearchResults(input.value);
+    });
+    input.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            const first = results.querySelector('.zone-result');
+            if (first) first.click();
+            results.innerHTML = '';
+            input.blur();
+        }
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            results.innerHTML = '';
+            input.blur();
+            closeZoneCommand();
+        }
+    });
+    document.addEventListener('click', (event) => {
+        const commandPanel = document.getElementById('commandPanel');
+        const zonePanel = document.getElementById('zoneCommandPanel');
+        const hotspotPanel = document.getElementById('hotspotDetail');
+        if (commandPanel?.contains(event.target)) return;
+        results.innerHTML = '';
+        if (zonePanel?.style.display !== 'block' && hotspotPanel?.style.display !== 'block') {
+            const opsBriefPanel = document.querySelector('.ops-brief-panel');
+            if (opsBriefPanel) opsBriefPanel.style.display = '';
+        }
+    });
+    closeBtn?.addEventListener('click', closeZoneCommand);
+    patrolBtn?.addEventListener('click', openSelectedInPatrol);
+}
+
+function buildZoneSearchIndex(opsBrief, hotspots, forecasts) {
+    const items = [];
+    const stationForecasts = forecasts?.station_forecasts || {};
+    const playbooks = opsBrief?.station_playbooks || [];
+    const seenJunctions = new Set();
+
+    playbooks.forEach(playbook => {
+        items.push({
+            type: 'station',
+            label: playbook.station,
+            subtitle: `Station playbook | CIS ${playbook.cis} | ${playbook.peak_window}`,
+            searchText: [
+                playbook.station,
+                playbook.reason_tags?.join(' '),
+                playbook.top_junctions?.map(j => j.name).join(' '),
+            ].join(' ').toLowerCase(),
+            lat: playbook.lat,
+            lon: playbook.lon,
+            playbook,
+            forecast: stationForecasts[playbook.station],
+            score: 100000 + (playbook.priority_score || playbook.cis || 0),
+        });
+
+        (playbook.top_junctions || []).forEach(junction => {
+            const key = junction.name.toLowerCase();
+            if (seenJunctions.has(key)) return;
+            seenJunctions.add(key);
+            items.push({
+                type: 'junction',
+                label: junction.name,
+                subtitle: `${playbook.station} | ${formatNumber(junction.violations)} violations | peak ${junction.peak_hour}:00`,
+                searchText: `${junction.name} ${playbook.station}`.toLowerCase(),
+                lat: playbook.lat,
+                lon: playbook.lon,
+                playbook,
+                junction,
+                forecast: stationForecasts[playbook.station],
+                score: 50000 + (junction.violations || 0),
+            });
+        });
+    });
+
+    [...(hotspots || [])]
+        .sort((a, b) => (a.rank || 9999) - (b.rank || 9999))
+        .slice(0, 160)
+        .forEach(h => {
+            items.push({
+                type: 'hotspot',
+                label: `Hotspot #${h.rank}`,
+                subtitle: `${h.severity} | ${formatNumber(h.count)} violations | ${h.dominant_violation}`,
+                searchText: `hotspot ${h.rank} ${h.severity} ${h.dominant_violation} ${h.dominant_vehicle}`.toLowerCase(),
+                lat: h.lat,
+                lon: h.lon,
+                hotspot: h,
+                score: 25000 + (1000 - (h.rank || 999)),
+            });
+        });
+
+    return items.sort((a, b) => b.score - a.score);
+}
+
+function renderZoneSearchResults(query) {
+    const results = document.getElementById('zoneSearchResults');
+    if (!results) return;
+    const normalized = query.trim().toLowerCase();
+    const matches = zoneSearchIndex
+        .filter(item => !normalized || item.searchText.includes(normalized) || item.label.toLowerCase().includes(normalized))
+        .slice(0, normalized ? 7 : 4);
+
+    if (normalized && matches.length === 0) {
+        results.innerHTML = '<div class="zone-empty">No matching station, junction, or hotspot</div>';
+        return;
+    }
+
+    results.innerHTML = matches.map((item, index) => `
+        <button class="zone-result" type="button" data-zone-index="${zoneSearchIndex.indexOf(item)}">
+            <span class="zone-result-type">${item.type}</span>
+            <span class="zone-result-main">${escapeHtml(item.label)}</span>
+            <span class="zone-result-sub">${escapeHtml(item.subtitle)}</span>
+        </button>
+    `).join('');
+
+    results.querySelectorAll('.zone-result').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const item = zoneSearchIndex[Number(btn.dataset.zoneIndex)];
+            if (item) focusCommandItem(item);
+        });
+    });
+}
+
+function focusCommandItem(item) {
+    selectedCommandItem = item;
+    const input = document.getElementById('zoneSearchInput');
+    const results = document.getElementById('zoneSearchResults');
+    if (input) input.value = item.label;
+    if (results) results.innerHTML = '';
+    requestAnimationFrame(() => {
+        const currentResults = document.getElementById('zoneSearchResults');
+        if (currentResults) currentResults.innerHTML = '';
+    });
+
+    if (map && item.lat && item.lon) {
+        map.flyTo([item.lat, item.lon], item.type === 'hotspot' ? 15 : 13.7, { duration: 0.75 });
+        renderCommandHighlight(item);
+    }
+
+    if (item.type === 'hotspot') {
+        const commandPanel = document.getElementById('zoneCommandPanel');
+        if (commandPanel) commandPanel.style.display = 'none';
+        showHotspotDetail(item.hotspot);
+    } else {
+        document.getElementById('hotspotDetail').style.display = 'none';
+        showZoneCommand(item);
+    }
+}
+
+function renderCommandHighlight(item) {
+    if (!map) return;
+    if (commandHighlightLayer) map.removeLayer(commandHighlightLayer);
+    commandHighlightLayer = L.layerGroup().addTo(map);
+    const color = item.type === 'hotspot'
+        ? SEVERITY_COLORS[item.hotspot?.severity] || COLORS.yellow
+        : COLORS.yellow;
+
+    L.circle([item.lat, item.lon], {
+        radius: item.type === 'hotspot' ? 280 : 900,
+        color,
+        weight: 2,
+        opacity: 0.9,
+        fillColor: color,
+        fillOpacity: 0.08,
+        dashArray: '8 8',
+    }).addTo(commandHighlightLayer);
+
+    L.circleMarker([item.lat, item.lon], {
+        radius: 7,
+        color,
+        weight: 2,
+        fillColor: color,
+        fillOpacity: 0.9,
+    }).addTo(commandHighlightLayer);
+}
+
+function showZoneCommand(item) {
+    const playbook = item.playbook;
+    if (!playbook) return;
+
+    const panel = document.getElementById('zoneCommandPanel');
+    document.getElementById('zoneCommandType').textContent =
+        item.type === 'junction' ? 'Junction routed to station playbook' : 'Station Playbook';
+    document.getElementById('zoneCommandTitle').textContent = item.label;
+    document.getElementById('zoneCommandSummary').textContent =
+        `${playbook.station}: deploy ${playbook.recommended_units} units during ${playbook.peak_window}. ` +
+        `Expected impact is ${formatNumber(playbook.modeled_weekly_reduction)} fewer weekly peak-window violations.`;
+
+    document.getElementById('zoneCommandGrid').innerHTML = `
+        <div><span>CIS</span><strong>${formatNumber(playbook.cis, 1)}</strong></div>
+        <div><span>Violations</span><strong>${formatNumber(playbook.total_violations)}</strong></div>
+        <div><span>Peak Demand</span><strong>${formatNumber(playbook.peak_window_daily_avg, 1)}/day</strong></div>
+        <div><span>Trend</span><strong>${playbook.trend_pct >= 0 ? '+' : ''}${formatNumber(playbook.trend_pct, 1)}%</strong></div>
+    `;
+
+    document.getElementById('zoneCommandTags').innerHTML = (playbook.reason_tags || [])
+        .map(tag => `<span>${escapeHtml(tag)}</span>`)
+        .join('');
+
+    const forecast = item.forecast?.forecast || [];
+    const forecastLine = forecast.length
+        ? `<div class="zone-forecast-strip">${forecast.map(v => `<span>${formatNumber(v)}</span>`).join('')}</div>`
+        : '';
+    document.getElementById('zoneCommandJunctions').innerHTML = `
+        <div class="zone-section-title">Evidence junctions</div>
+        ${(playbook.top_junctions || []).map(j => `
+            <div class="zone-junction-row">
+                <span>${escapeHtml(j.name)}</span>
+                <strong>${formatNumber(j.violations)}</strong>
+            </div>
+        `).join('')}
+        ${forecastLine ? `<div class="zone-section-title">7-day station forecast</div>${forecastLine}` : ''}
+    `;
+
+    panel.style.display = 'block';
+    const opsBrief = document.querySelector('.ops-brief-panel');
+    if (opsBrief) opsBrief.style.display = 'none';
+}
+
+function closeZoneCommand() {
+    document.getElementById('zoneCommandPanel').style.display = 'none';
+    selectedCommandItem = null;
+    if (commandHighlightLayer && map) {
+        map.removeLayer(commandHighlightLayer);
+        commandHighlightLayer = null;
+    }
+    const opsBrief = document.querySelector('.ops-brief-panel');
+    if (opsBrief) opsBrief.style.display = '';
+}
+
+function openSelectedInPatrol() {
+    if (!selectedCommandItem?.playbook) return;
+    const station = selectedCommandItem.playbook.station;
+    switchView('patrol');
+    requestAnimationFrame(() => {
+        const rec = patrolStationLookup.get(station);
+        if (rec && patrolMap) {
+            patrolMap.invalidateSize();
+            patrolMap.flyTo([rec.lat, rec.lon], 14, { duration: 0.75 });
+        }
+    });
+}
 
 // Time slider
 function initTimeSlider() {
@@ -922,6 +1198,15 @@ function renderForecasts(forecasts) {
         document.querySelector('#metricR2 .metric-value').textContent = avgError ? `${formatNumber(avgError, 1)}%` : m.r2;
         document.getElementById('modelBadge').textContent = avgError ? `Avg error ${formatNumber(avgError, 1)}%` : `R² = ${m.r2}`;
     }
+    if (forecasts.station_model_metrics) {
+        const sm = forecasts.station_model_metrics;
+        const stationMetric = document.querySelector('#metricStationR2 .metric-value');
+        if (stationMetric) stationMetric.textContent = formatNumber(sm.r2, 3);
+        const stationCard = document.getElementById('metricStationR2');
+        if (stationCard) {
+            stationCard.title = `${sm.model}: ${formatNumber(sm.rows)} station-day rows, ${formatNumber(sm.test_rows)} held out after ${sm.split_date}`;
+        }
+    }
 
     // 7-day forecast chart
     if (forecasts.forecast) {
@@ -1117,6 +1402,7 @@ async function init() {
     renderKPIs(data.stats, data.hotspots);
     renderOpsBrief(data.operationsBrief);
     initMap(data.heatmap, data.hotspots, data.hourlyAnim);
+    initCommandCenter(data.operationsBrief, data.hotspots, data.forecasts);
     renderAnalytics(data.temporal);
     initPatrolView(data.enforcement, data.operationsBrief);
     renderForecasts(data.forecasts);
