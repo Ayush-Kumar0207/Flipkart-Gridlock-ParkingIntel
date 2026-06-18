@@ -894,14 +894,14 @@ document.getElementById('closeDetail')?.addEventListener('click', () => {
 });
 
 // Dataset-native search and station command card
-function initCommandCenter(opsBrief, hotspots, forecasts) {
+function initCommandCenter(opsBrief, hotspots, forecasts, temporal) {
     const input = document.getElementById('zoneSearchInput');
     const results = document.getElementById('zoneSearchResults');
     const closeBtn = document.getElementById('closeZoneCommand');
     const patrolBtn = document.getElementById('zoneCommandPatrol');
     if (!input || !results) return;
 
-    zoneSearchIndex = buildZoneSearchIndex(opsBrief, hotspots, forecasts);
+    zoneSearchIndex = buildZoneSearchIndex(opsBrief, hotspots, forecasts, temporal);
 
     input.addEventListener('input', () => renderZoneSearchResults(input.value));
     input.addEventListener('focus', () => {
@@ -945,29 +945,63 @@ function initCommandCenter(opsBrief, hotspots, forecasts) {
     patrolBtn?.addEventListener('click', openSelectedInPatrol);
 }
 
-function buildZoneSearchIndex(opsBrief, hotspots, forecasts) {
+function buildZoneSearchIndex(opsBrief, hotspots, forecasts, temporal) {
     const items = [];
     const stationForecasts = forecasts?.station_forecasts || {};
     const playbooks = opsBrief?.station_playbooks || [];
+    const stationRankingLabels = temporal?.station_rankings?.labels || [];
+    const stationRankingValues = temporal?.station_rankings?.values || [];
+    const stationRankings = new Map(stationRankingLabels.map((name, index) => [
+        name,
+        { rank: index + 1, totalViolations: stationRankingValues[index] || 0 },
+    ]));
+    const playbookByStation = new Map(playbooks.map(playbook => [playbook.station, playbook]));
+    const stationNames = new Set([
+        ...playbooks.map(playbook => playbook.station),
+        ...Object.keys(stationForecasts),
+        ...stationRankingLabels,
+    ]);
     const seenJunctions = new Set();
 
-    playbooks.forEach(playbook => {
+    stationNames.forEach(station => {
+        const playbook = playbookByStation.get(station);
+        const forecast = stationForecasts[station];
+        const ranking = stationRankings.get(station);
+        const forecastBits = forecast
+            ? `${formatNumber(forecast.avg_daily, 1)}/day forecast | ${forecast.trend_pct >= 0 ? '+' : ''}${formatNumber(forecast.trend_pct, 1)}% trend`
+            : '';
+        const subtitle = playbook
+            ? `Station playbook | CIS ${playbook.cis} | ${playbook.peak_window}`
+            : [
+                ranking ? `Station rank #${ranking.rank}` : 'Station intelligence',
+                ranking ? `${formatNumber(ranking.totalViolations)} violations` : '',
+                forecastBits,
+            ].filter(Boolean).join(' | ');
+
         items.push({
             type: 'station',
-            label: playbook.station,
-            subtitle: `Station playbook | CIS ${playbook.cis} | ${playbook.peak_window}`,
+            label: station,
+            subtitle,
             searchText: [
-                playbook.station,
-                playbook.reason_tags?.join(' '),
-                playbook.top_junctions?.map(j => j.name).join(' '),
+                'station',
+                station,
+                playbook?.reason_tags?.join(' '),
+                playbook?.top_junctions?.map(j => j.name).join(' '),
+                playbook?.peak_day,
+                ranking ? `rank ${ranking.rank}` : '',
             ].join(' ').toLowerCase(),
-            lat: playbook.lat,
-            lon: playbook.lon,
+            lat: playbook?.lat,
+            lon: playbook?.lon,
             playbook,
-            forecast: stationForecasts[playbook.station],
-            score: 100000 + (playbook.priority_score || playbook.cis || 0),
+            forecast,
+            ranking,
+            score: playbook
+                ? 120000 + (playbook.priority_score || playbook.cis || 0)
+                : 90000 - (ranking?.rank || 80) * 120 + (forecast?.avg_daily || 0),
         });
+    });
 
+    playbooks.forEach(playbook => {
         (playbook.top_junctions || []).forEach(junction => {
             const key = junction.name.toLowerCase();
             if (seenJunctions.has(key)) return;
@@ -1010,9 +1044,11 @@ function renderZoneSearchResults(query) {
     const results = document.getElementById('zoneSearchResults');
     if (!results) return;
     const normalized = query.trim().toLowerCase();
+    const stationCount = zoneSearchIndex.filter(item => item.type === 'station').length;
+    const resultLimit = normalized ? 10 : Math.max(8, stationCount);
     const matches = zoneSearchIndex
         .filter(item => !normalized || item.searchText.includes(normalized) || item.label.toLowerCase().includes(normalized))
-        .slice(0, normalized ? 7 : 4);
+        .slice(0, resultLimit);
 
     if (normalized && matches.length === 0) {
         results.innerHTML = '<div class="zone-empty">No matching station, junction, or hotspot</div>';
@@ -1045,6 +1081,11 @@ function focusCommandItem(item) {
         const currentResults = document.getElementById('zoneSearchResults');
         if (currentResults) currentResults.innerHTML = '';
     });
+
+    if (commandHighlightLayer && map) {
+        map.removeLayer(commandHighlightLayer);
+        commandHighlightLayer = null;
+    }
 
     if (map && item.lat && item.lon) {
         map.flyTo([item.lat, item.lon], item.type === 'hotspot' ? 15 : 13.7, { duration: 0.75 });
@@ -1090,34 +1131,50 @@ function renderCommandHighlight(item) {
 
 function showZoneCommand(item) {
     const playbook = item.playbook;
-    if (!playbook) return;
+    const forecast = item.forecast?.forecast || [];
+    const patrolAction = document.getElementById('zoneCommandPatrol');
 
     const panel = document.getElementById('zoneCommandPanel');
     document.getElementById('zoneCommandType').textContent =
-        item.type === 'junction' ? 'Junction routed to station playbook' : 'Station Playbook';
+        item.type === 'junction'
+            ? 'Junction routed to station playbook'
+            : playbook ? 'Station Playbook' : 'Station Intelligence';
     document.getElementById('zoneCommandTitle').textContent = item.label;
-    document.getElementById('zoneCommandSummary').textContent =
-        `${playbook.station}: deploy ${playbook.recommended_units} units during ${playbook.peak_window}. ` +
-        `Expected impact is ${formatNumber(playbook.modeled_weekly_reduction)} fewer weekly peak-window violations.`;
+    document.getElementById('zoneCommandSummary').textContent = playbook
+        ? `${playbook.station}: deploy ${playbook.recommended_units} units during ${playbook.peak_window}. ` +
+          `Expected impact is ${formatNumber(playbook.modeled_weekly_reduction)} fewer weekly peak-window violations.`
+        : `${item.label}: station-level demand signal from the shipped rankings${item.forecast ? ' and 7-day forecast' : ''}. ` +
+          `No patrol deployment playbook is currently assigned to this station.`;
 
-    document.getElementById('zoneCommandGrid').innerHTML = `
-        <div><span>CIS</span><strong>${formatNumber(playbook.cis, 1)}</strong></div>
-        <div><span>Violations</span><strong>${formatNumber(playbook.total_violations)}</strong></div>
-        <div><span>Peak Demand</span><strong>${formatNumber(playbook.peak_window_daily_avg, 1)}/day</strong></div>
-        <div><span>Trend</span><strong>${playbook.trend_pct >= 0 ? '+' : ''}${formatNumber(playbook.trend_pct, 1)}%</strong></div>
-    `;
+    document.getElementById('zoneCommandGrid').innerHTML = playbook
+        ? `
+            <div><span>CIS</span><strong>${formatNumber(playbook.cis, 1)}</strong></div>
+            <div><span>Violations</span><strong>${formatNumber(playbook.total_violations)}</strong></div>
+            <div><span>Peak Demand</span><strong>${formatNumber(playbook.peak_window_daily_avg, 1)}/day</strong></div>
+            <div><span>Trend</span><strong>${playbook.trend_pct >= 0 ? '+' : ''}${formatNumber(playbook.trend_pct, 1)}%</strong></div>
+        `
+        : `
+            <div><span>Rank</span><strong>${item.ranking ? `#${item.ranking.rank}` : '—'}</strong></div>
+            <div><span>Violations</span><strong>${item.ranking ? formatNumber(item.ranking.totalViolations) : '—'}</strong></div>
+            <div><span>Forecast Avg</span><strong>${item.forecast ? `${formatNumber(item.forecast.avg_daily, 1)}/day` : '—'}</strong></div>
+            <div><span>Trend</span><strong>${item.forecast ? `${item.forecast.trend_pct >= 0 ? '+' : ''}${formatNumber(item.forecast.trend_pct, 1)}%` : '—'}</strong></div>
+        `;
 
-    document.getElementById('zoneCommandTags').innerHTML = (playbook.reason_tags || [])
+    const tags = playbook?.reason_tags || [
+        item.ranking ? 'station ranking' : '',
+        item.forecast ? '7-day forecast' : '',
+        'no patrol playbook',
+    ].filter(Boolean);
+    document.getElementById('zoneCommandTags').innerHTML = tags
         .map(tag => `<span>${escapeHtml(tag)}</span>`)
         .join('');
 
-    const forecast = item.forecast?.forecast || [];
     const forecastLine = forecast.length
         ? `<div class="zone-forecast-strip">${forecast.map(v => `<span>${formatNumber(v)}</span>`).join('')}</div>`
         : '';
     document.getElementById('zoneCommandJunctions').innerHTML = `
-        <div class="zone-section-title">Evidence junctions</div>
-        ${(playbook.top_junctions || []).map(j => `
+        ${playbook ? '<div class="zone-section-title">Evidence junctions</div>' : ''}
+        ${(playbook?.top_junctions || []).map(j => `
             <div class="zone-junction-row">
                 <span>${escapeHtml(j.name)}</span>
                 <strong>${formatNumber(j.violations)}</strong>
@@ -1126,6 +1183,7 @@ function showZoneCommand(item) {
         ${forecastLine ? `<div class="zone-section-title">7-day station forecast</div>${forecastLine}` : ''}
     `;
 
+    if (patrolAction) patrolAction.style.display = playbook ? '' : 'none';
     panel.style.display = 'block';
     const opsBrief = document.querySelector('.ops-brief-panel');
     if (opsBrief) opsBrief.style.display = 'none';
@@ -1907,7 +1965,7 @@ async function init() {
     renderKPIs(data.stats, data.hotspots);
     renderOpsBrief(data.operationsBrief);
     initMap(data.heatmap, data.hotspots, data.hourlyAnim);
-    initCommandCenter(data.operationsBrief, data.hotspots, data.forecasts);
+    initCommandCenter(data.operationsBrief, data.hotspots, data.forecasts, data.temporal);
     renderAnalytics(data.temporal);
     initPatrolView(data.enforcement, data.operationsBrief);
     renderForecasts(data.forecasts);

@@ -587,10 +587,11 @@ body::before {
 
 .zone-command-panel {
     position: absolute;
-    top: 112px;
+    top: 104px;
     left: 56px;
     width: min(360px, calc(100% - 68px));
-    max-height: calc(100% - 250px);
+    min-height: min(218px, calc(100% - 246px));
+    max-height: min(320px, calc(100% - 239px));
     overflow-y: auto;
     z-index: 845;
     background: rgba(5, 8, 22, 0.9);
@@ -1994,7 +1995,7 @@ body::before {
         top: 104px;
         left: 10px;
         width: calc(100% - 20px);
-        max-height: calc(100% - 240px);
+        max-height: calc(100% - 220px);
     }
     .route-brief { display: none; }
     .scenario-metrics { grid-template-columns: 1fr; }
