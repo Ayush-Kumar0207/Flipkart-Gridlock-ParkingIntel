@@ -66,10 +66,10 @@
 }
 
 html, body {
-    min-height: 100%;
+    height: 100%;
     overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior-y: auto;
+    overflow-y: hidden;
+    overscroll-behavior: none;
 }
 
 body {
@@ -362,14 +362,17 @@ body::before {
 .main-content {
     position: relative;
     margin-top: calc(var(--header-height) + var(--kpi-height));
-    min-height: calc(100vh - var(--header-height) - var(--kpi-height));
+    height: calc(100vh - var(--header-height) - var(--kpi-height));
+    min-height: 0;
+    overflow: hidden;
     z-index: 1;
 }
 
 .view {
     display: none;
-    min-height: calc(100vh - var(--header-height) - var(--kpi-height));
-    overflow: visible;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .view.active {
@@ -381,7 +384,9 @@ body::before {
    ============================ */
 .map-container {
     position: relative;
-    height: max(640px, calc(100vh - var(--header-height) - var(--kpi-height)));
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .map {
@@ -393,9 +398,9 @@ body::before {
 /* Dataset-native Command Search */
 .command-panel {
     position: absolute;
-    top: 12px;
-    left: 56px;
-    width: min(360px, calc(100% - 68px));
+    top: 14px;
+    left: 64px;
+    width: min(320px, calc(100% - 96px));
     z-index: 860;
     background: rgba(5, 8, 22, 0.88);
     backdrop-filter: blur(16px);
@@ -404,6 +409,49 @@ body::before {
     padding: 0.7rem;
     box-shadow: var(--shadow-card), var(--shadow-glow-blue);
     touch-action: auto;
+}
+
+.floating-panel {
+    user-select: none;
+}
+
+.floating-panel.is-dragging {
+    transition: none !important;
+    z-index: 950 !important;
+    box-shadow: var(--shadow-card), 0 0 28px rgba(255, 229, 0, 0.18);
+}
+
+.panel-drag-grip {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.45rem;
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-dim);
+    cursor: grab;
+    font-size: 0.78rem;
+    line-height: 1;
+    z-index: 2;
+}
+
+.panel-drag-grip:hover {
+    color: var(--fk-yellow);
+    border-color: rgba(255, 229, 0, 0.35);
+    background: rgba(255, 229, 0, 0.1);
+}
+
+.panel-drag-grip:active {
+    cursor: grabbing;
+}
+
+.zone-command-panel .panel-drag-grip,
+.hotspot-detail .panel-drag-grip {
+    right: 2.35rem;
 }
 
 .command-eyebrow,
@@ -788,6 +836,7 @@ body::before {
     padding: 0.7rem 0.9rem;
     z-index: 800;
     box-shadow: var(--shadow-card);
+    touch-action: auto;
 }
 
 .map-legend h4 {
@@ -834,6 +883,7 @@ body::before {
     padding: 0.7rem;
     z-index: 800;
     box-shadow: var(--shadow-card);
+    touch-action: auto;
 }
 
 .lens-title {
@@ -892,7 +942,7 @@ body::before {
 .ops-brief-panel {
     position: absolute;
     left: 12px;
-    bottom: 150px;
+    bottom: 144px;
     width: min(390px, calc(100% - 24px));
     background: rgba(10, 14, 39, 0.88);
     backdrop-filter: blur(16px);
@@ -901,6 +951,7 @@ body::before {
     padding: 1rem;
     z-index: 790;
     box-shadow: var(--shadow-card), var(--shadow-glow-yellow);
+    touch-action: auto;
 }
 
 .ops-eyebrow {
@@ -1046,8 +1097,9 @@ body::before {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
     padding: 0.75rem 1.25rem;
-    min-height: calc(100vh - var(--header-height) - var(--kpi-height));
+    min-height: 100%;
     padding-bottom: 2rem;
+    overflow-y: auto;
 }
 
 .chart-card {
@@ -1100,22 +1152,24 @@ body::before {
 .patrol-layout {
     display: grid;
     grid-template-columns: 1fr 380px;
-    min-height: calc(100vh - var(--header-height) - var(--kpi-height));
-    align-items: start;
+    height: 100%;
+    min-height: 0;
+    align-items: stretch;
+    overflow: hidden;
 }
 
 .patrol-map-container {
     position: relative;
-    height: max(620px, calc(100vh - var(--header-height) - var(--kpi-height)));
-    position: sticky;
-    top: calc(var(--header-height) + var(--kpi-height));
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .route-brief {
     position: absolute;
-    top: 12px;
-    left: 56px;
-    width: min(360px, calc(100% - 68px));
+    top: 16px;
+    left: 64px;
+    width: min(340px, calc(100% - 96px));
     background: rgba(10, 14, 39, 0.88);
     backdrop-filter: blur(14px);
     border: 1px solid rgba(255, 229, 0, 0.24);
@@ -1123,6 +1177,7 @@ body::before {
     padding: 0.8rem 0.9rem;
     z-index: 790;
     box-shadow: var(--shadow-card), var(--shadow-glow-yellow);
+    touch-action: auto;
 }
 
 .route-eyebrow {
@@ -1153,6 +1208,8 @@ body::before {
     backdrop-filter: blur(8px);
     border-left: 1px solid var(--border);
     padding: 1.25rem;
+    height: 100%;
+    min-height: 0;
     overflow-y: auto;
 }
 
@@ -1494,7 +1551,9 @@ body::before {
 .forecast-layout {
     display: grid;
     grid-template-columns: 1fr 280px;
-    min-height: calc(100vh - var(--header-height) - var(--kpi-height));
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .forecast-main {
@@ -1502,12 +1561,17 @@ body::before {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 .forecast-sidebar {
     background: rgba(10, 14, 39, 0.6);
     border-left: 1px solid var(--border);
     padding: 1.25rem;
+    height: 100%;
+    min-height: 0;
     overflow-y: auto;
 }
 
@@ -1789,9 +1853,23 @@ body::before {
         padding: 0.45rem 0.6rem;
     }
 
-    .analytics-grid { grid-template-columns: 1fr; }
-    .patrol-layout { grid-template-columns: 1fr; }
-    .forecast-layout { grid-template-columns: 1fr; }
+    .view { overflow-y: auto; }
+    .analytics-grid { grid-template-columns: 1fr; overflow: visible; }
+    .patrol-layout,
+    .forecast-layout {
+        grid-template-columns: 1fr;
+        height: auto;
+        overflow: visible;
+    }
+    .patrol-map-container {
+        height: 460px;
+    }
+    .patrol-sidebar,
+    .forecast-main,
+    .forecast-sidebar {
+        height: auto;
+        overflow: visible;
+    }
     .kpi-bar {
         gap: 0.45rem;
         padding: 0.5rem 0.75rem;

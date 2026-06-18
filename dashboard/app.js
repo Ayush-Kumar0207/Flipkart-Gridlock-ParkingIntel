@@ -69,6 +69,160 @@ function escapeHtml(value) {
         .replace(/'/g, '&#039;');
 }
 
+function getPanelPosition(id) {
+    try {
+        const saved = localStorage.getItem(`signalflow:${id}:pos`);
+        return saved ? JSON.parse(saved) : null;
+    } catch (_) {
+        return null;
+    }
+}
+
+function savePanelPosition(id, x, y) {
+    try {
+        localStorage.setItem(`signalflow:${id}:pos`, JSON.stringify({
+            x: Math.round(x),
+            y: Math.round(y),
+        }));
+    } catch (_) {
+        // Dragging should still work in browsers that block storage.
+    }
+}
+
+function clearPanelPosition(id) {
+    try {
+        localStorage.removeItem(`signalflow:${id}:pos`);
+    } catch (_) {
+        // Ignore storage failures; the visual reset below is the important part.
+    }
+}
+
+function initFloatingPanels() {
+    if (window.matchMedia('(max-width: 768px)').matches) return;
+
+    const panels = [
+        'commandPanel',
+        'zoneCommandPanel',
+        'hotspotDetail',
+        'mapLegend',
+        'mapLensPanel',
+        'opsBriefPanel',
+        'routeBrief',
+    ];
+
+    panels.forEach(id => {
+        const panel = document.getElementById(id);
+        const parent = panel?.parentElement;
+        if (!panel || !parent || panel.dataset.dragReady === 'true') return;
+
+        panel.dataset.dragReady = 'true';
+        panel.classList.add('floating-panel');
+
+        const handle = document.createElement('button');
+        handle.type = 'button';
+        handle.className = 'panel-drag-grip';
+        handle.setAttribute('aria-label', `Move ${id}`);
+        handle.title = 'Drag panel';
+        handle.textContent = '⋮⋮';
+        panel.appendChild(handle);
+
+        const saved = getPanelPosition(id);
+        if (saved) {
+            placePanel(panel, parent, saved.x, saved.y);
+        }
+
+        let dragState = null;
+
+        const startDrag = (event) => {
+            const parentRect = parent.getBoundingClientRect();
+            const panelRect = panel.getBoundingClientRect();
+            dragState = {
+                startX: event.clientX,
+                startY: event.clientY,
+                originX: panelRect.left - parentRect.left,
+                originY: panelRect.top - parentRect.top,
+            };
+            panel.classList.add('is-dragging');
+        };
+
+        const moveDrag = (event) => {
+            if (!dragState) return;
+            const x = dragState.originX + event.clientX - dragState.startX;
+            const y = dragState.originY + event.clientY - dragState.startY;
+            placePanel(panel, parent, x, y);
+        };
+
+        handle.addEventListener('pointerdown', event => {
+            event.preventDefault();
+            event.stopPropagation();
+            startDrag(event);
+            document.addEventListener('mousemove', moveDrag);
+            document.addEventListener('mouseup', finishMouseDrag, { once: true });
+            handle.setPointerCapture(event.pointerId);
+        });
+
+        handle.addEventListener('pointermove', moveDrag);
+
+        const finishDrag = (event = {}) => {
+            if (!dragState) return;
+            dragState = null;
+            panel.classList.remove('is-dragging');
+            document.removeEventListener('mousemove', moveDrag);
+            const parentRect = parent.getBoundingClientRect();
+            const panelRect = panel.getBoundingClientRect();
+            savePanelPosition(id, panelRect.left - parentRect.left, panelRect.top - parentRect.top);
+            if (event.pointerId !== undefined) handle.releasePointerCapture(event.pointerId);
+        };
+
+        const finishMouseDrag = event => {
+            finishDrag(event);
+        };
+
+        handle.addEventListener('pointerup', finishDrag);
+        handle.addEventListener('pointercancel', finishDrag);
+        handle.addEventListener('mousedown', event => {
+            if (event.button !== 0 || dragState) return;
+            event.preventDefault();
+            event.stopPropagation();
+            startDrag(event);
+            document.addEventListener('mousemove', moveDrag);
+            document.addEventListener('mouseup', finishMouseDrag, { once: true });
+        });
+        handle.addEventListener('dblclick', event => {
+            event.preventDefault();
+            clearPanelPosition(id);
+            panel.style.left = '';
+            panel.style.top = '';
+            panel.style.right = '';
+            panel.style.bottom = '';
+        });
+    });
+
+    window.addEventListener('resize', () => {
+        panels.forEach(id => {
+            const panel = document.getElementById(id);
+            const parent = panel?.parentElement;
+            if (!panel || !parent || !panel.style.left || !panel.style.top) return;
+            placePanel(panel, parent, parseFloat(panel.style.left), parseFloat(panel.style.top));
+        });
+    }, { passive: true });
+}
+
+function placePanel(panel, parent, x, y) {
+    const margin = 10;
+    const parentRect = parent.getBoundingClientRect();
+    const panelRect = panel.getBoundingClientRect();
+    const maxX = Math.max(margin, parentRect.width - panelRect.width - margin);
+    const maxY = Math.max(margin, parentRect.height - panelRect.height - margin);
+    const nextX = Math.min(Math.max(margin, x), maxX);
+    const nextY = Math.min(Math.max(margin, y), maxY);
+
+    panel.style.left = `${nextX}px`;
+    panel.style.top = `${nextY}px`;
+    panel.style.right = 'auto';
+    panel.style.bottom = 'auto';
+}
+
 function configureMapWheelPan(leafletMap) {
     const container = leafletMap.getContainer();
     leafletMap.scrollWheelZoom.disable();
@@ -1406,6 +1560,7 @@ async function init() {
     renderAnalytics(data.temporal);
     initPatrolView(data.enforcement, data.operationsBrief);
     renderForecasts(data.forecasts);
+    initFloatingPanels();
     applyInitialViewFromUrl();
 
     console.log('SignalFlow — Ready ✅');
