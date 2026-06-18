@@ -57,7 +57,7 @@ AI-optimized enforcement recommendations powered by our reliability-adjusted **C
 
 ### 📈 View 4 — Violation Forecasts
 
-XGBoost-powered 7-day violation forecasting with model validation metrics. The citywide forecast is framed as a staffing signal, while the station-day validation layer uses 6,642 station-day rows and reaches R²=0.641. Station trend indicators flag zones with increasing violation pressure (↑) requiring proactive attention.
+XGBoost-powered 7-day violation forecasting with model validation metrics. The citywide forecast is framed as a staffing signal, while the station-day validation layer uses 6,642 station-day rows and reaches R²=0.690 with MAE=15.8. Station trend indicators flag zones with increasing violation pressure (↑) requiring proactive attention.
 
 ![7-Day Forecast with citywide error metrics and station-day validation](assets/forecasts.png)
 
@@ -124,7 +124,7 @@ A weighted composite metric that quantifies how severely each junction/zone's pa
 | **Hotspot Detection** | 674 spatial clusters via HDBSCAN | 34 Critical, 303 High, 168 Medium, 169 Low |
 | **Impact Scoring** | 50 junctions + 54 stations scored | Top junction: Safina Plaza Junction (CIS=59.6) |
 | **Temporal Analysis** | 11 pattern categories | Peak hour: 10:00 IST, Busiest day: Sunday |
-| **Forecasting** | Citywide + station-day demand signals | Citywide avg error=11.3%; station-day R²=0.641 across 6,642 rows |
+| **Forecasting** | Citywide + station-day demand signals | Citywide avg error=11.3%; station-day R²=0.690, MAE=15.8 across 6,642 rows |
 | **Operations Brief** | 10 station playbooks + 4 budget scenarios | City peak window: 09:00–12:00 IST (30.7% of records) |
 
 ---

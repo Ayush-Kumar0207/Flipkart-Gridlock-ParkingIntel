@@ -10,6 +10,9 @@ import os
 import math
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import HuberRegressor
 
 try:
     from xgboost import XGBRegressor
@@ -178,14 +181,17 @@ def train_station_day_model(df):
 
     The citywide model has only ~151 daily points. This station-day view turns
     the same approved dataset into many time-aware examples by forecasting each
-    police station's next daily violation count from its own lag history.
+    police station's next daily violation count from its own lag history. The
+    final validation uses an XGBoost log-count model blended with a robust
+    trend model to balance low operational error with stable station-level fit.
     """
     print("[Forecaster] Training station-day validation model...")
 
     station_df = df.dropna(subset=['date', 'police_station']).copy()
     station_df['date'] = pd.to_datetime(station_df['date'])
+    station_df['police_station'] = station_df['police_station'].astype(str)
 
-    stations = sorted(station_df['police_station'].astype(str).unique())
+    stations = sorted(station_df['police_station'].unique())
     dates = pd.date_range(station_df['date'].min(), station_df['date'].max(), freq='D')
 
     counts = (
@@ -203,24 +209,22 @@ def train_station_day_model(df):
     model_df['count'] = model_df['count'].fillna(0).astype(float)
     model_df = model_df.sort_values(['police_station', 'date']).reset_index(drop=True)
 
+    lag_days = [1, 2, 3, 4, 5, 6, 7, 8, 14, 21, 28]
+    rolling_windows = [2, 3, 5, 7, 14, 21, 28]
+
     grouped = model_df.groupby('police_station')['count']
-    for lag in [1, 2, 3, 7, 14, 21, 28]:
+    for lag in lag_days:
         model_df[f'station_lag_{lag}'] = grouped.shift(lag)
 
     shifted = grouped.shift(1)
-    for window in [3, 7, 14, 28]:
-        model_df[f'station_roll_mean_{window}'] = (
-            shifted.groupby(model_df['police_station'])
-            .rolling(window)
-            .mean()
-            .reset_index(level=0, drop=True)
-        )
-        model_df[f'station_roll_std_{window}'] = (
-            shifted.groupby(model_df['police_station'])
-            .rolling(window)
-            .std()
-            .reset_index(level=0, drop=True)
-        )
+    for window in rolling_windows:
+        rolling = shifted.groupby(model_df['police_station']).rolling(window)
+        model_df[f'station_roll_mean_{window}'] = rolling.mean().reset_index(level=0, drop=True)
+        model_df[f'station_roll_std_{window}'] = rolling.std().reset_index(level=0, drop=True)
+        if window in [7, 14, 28]:
+            model_df[f'station_roll_min_{window}'] = rolling.min().reset_index(level=0, drop=True)
+            model_df[f'station_roll_max_{window}'] = rolling.max().reset_index(level=0, drop=True)
+            model_df[f'station_roll_median_{window}'] = rolling.median().reset_index(level=0, drop=True)
 
     model_df['station_history_mean'] = grouped.transform(
         lambda s: s.shift(1).expanding(min_periods=7).mean()
@@ -228,8 +232,33 @@ def train_station_day_model(df):
     model_df['station_history_std'] = grouped.transform(
         lambda s: s.shift(1).expanding(min_periods=7).std()
     )
+    dow_key = model_df['date'].dt.dayofweek
+    model_df['station_dow_mean'] = (
+        model_df.groupby(['police_station', dow_key])['count']
+        .transform(lambda s: s.shift(1).expanding(min_periods=2).mean())
+    )
+    model_df['station_dow_std'] = (
+        model_df.groupby(['police_station', dow_key])['count']
+        .transform(lambda s: s.shift(1).expanding(min_periods=2).std())
+    )
 
-    model_df['station_code'] = pd.Categorical(model_df['police_station']).codes
+    city_daily = model_df.groupby('date')['count'].sum().sort_index()
+    city_features = pd.DataFrame({'date': city_daily.index})
+    for lag in lag_days:
+        city_features[f'city_lag_{lag}'] = city_daily.shift(lag).values
+    city_shifted = city_daily.shift(1)
+    for window in rolling_windows:
+        city_features[f'city_roll_mean_{window}'] = city_shifted.rolling(window).mean().values
+        city_features[f'city_roll_std_{window}'] = city_shifted.rolling(window).std().values
+    city_features['city_history_mean'] = city_shifted.expanding(min_periods=7).mean().values
+    city_features['city_dow_mean'] = (
+        city_daily.groupby(city_daily.index.dayofweek)
+        .transform(lambda s: s.shift(1).expanding(min_periods=2).mean())
+        .values
+    )
+    model_df = model_df.merge(city_features, on='date', how='left')
+
+    model_df['station_code'] = pd.Categorical(model_df['police_station'], categories=stations).codes
     model_df['day_of_week'] = model_df['date'].dt.dayofweek
     model_df['is_weekend'] = model_df['day_of_week'].isin([5, 6]).astype(int)
     model_df['month'] = model_df['date'].dt.month
@@ -237,8 +266,20 @@ def train_station_day_model(df):
     model_df['week_of_year'] = model_df['date'].dt.isocalendar().week.astype(int)
     model_df['dow_sin'] = np.sin(2 * np.pi * model_df['day_of_week'] / 7)
     model_df['dow_cos'] = np.cos(2 * np.pi * model_df['day_of_week'] / 7)
+    model_df['month_sin'] = np.sin(2 * np.pi * model_df['month'] / 12)
+    model_df['month_cos'] = np.cos(2 * np.pi * model_df['month'] / 12)
     model_df['recent_vs_baseline'] = (
         model_df['station_roll_mean_7'] / model_df['station_history_mean'].replace(0, np.nan)
+    )
+    model_df['momentum_7_28'] = model_df['station_roll_mean_7'] - model_df['station_roll_mean_28']
+    model_df['ratio_7_28'] = (
+        model_df['station_roll_mean_7'] / model_df['station_roll_mean_28'].replace(0, np.nan)
+    )
+    model_df['lag1_minus_lag7'] = model_df['station_lag_1'] - model_df['station_lag_7']
+    model_df['lag7_minus_lag14'] = model_df['station_lag_7'] - model_df['station_lag_14']
+    model_df['share_lag1'] = model_df['station_lag_1'] / model_df['city_lag_1'].replace(0, np.nan)
+    model_df['share_mean7'] = (
+        model_df['station_roll_mean_7'] / model_df['city_roll_mean_7'].replace(0, np.nan)
     )
 
     model_df = model_df.replace([np.inf, -np.inf], np.nan).dropna().reset_index(drop=True)
@@ -249,6 +290,35 @@ def train_station_day_model(df):
     split_date = unique_dates[int(len(unique_dates) * 0.8)]
     train_mask = model_df['date'] < split_date
     test_mask = model_df['date'] >= split_date
+
+    # Training-period station profiles only. These describe each station from
+    # past records and avoid using validation-period totals as features.
+    profile_source = station_df[station_df['date'] < split_date].copy()
+    train_day_count = max(profile_source['date'].nunique(), 1)
+    station_profiles = (
+        profile_source.groupby('police_station')
+        .agg(
+            profile_total=('id', 'size'),
+            profile_lat=('latitude', 'mean'),
+            profile_lon=('longitude', 'mean'),
+            profile_main_road=('is_main_road_violation', 'mean'),
+            profile_wrong_parking=('is_wrong_parking', 'mean'),
+            profile_no_parking=('is_no_parking', 'mean'),
+            profile_double_parking=('is_double_parking', 'mean'),
+            profile_footpath=('is_parking_on_footpath', 'mean'),
+            profile_num_violations=('num_violations', 'mean'),
+            profile_heavy=('vehicle_size', lambda s: (s == 'Heavy').mean()),
+            profile_junction_rate=('junction_name', lambda s: (s != 'No Junction').mean()),
+            profile_unique_junctions=('junction_name', 'nunique'),
+            profile_unique_devices=('device_id', 'nunique'),
+        )
+        .reset_index()
+    )
+    station_profiles['profile_avg_daily'] = station_profiles['profile_total'] / train_day_count
+    model_df = model_df.merge(station_profiles, on='police_station', how='left')
+    for col in station_profiles.columns:
+        if col != 'police_station':
+            model_df[col] = model_df[col].fillna(model_df[col].median())
 
     feature_cols = [
         c for c in model_df.columns
@@ -263,28 +333,41 @@ def train_station_day_model(df):
         return None
 
     if HAS_XGB:
-        model = XGBRegressor(
-            n_estimators=360,
+        log_model = XGBRegressor(
+            objective='reg:squarederror',
+            n_estimators=380,
             max_depth=4,
-            learning_rate=0.04,
+            learning_rate=0.045,
             subsample=0.85,
             colsample_bytree=0.85,
             reg_lambda=8,
+            reg_alpha=0.05,
+            min_child_weight=2,
             random_state=42,
             verbosity=0,
             n_jobs=1,
         )
+        robust_trend_model = make_pipeline(
+            StandardScaler(),
+            HuberRegressor(max_iter=2000, epsilon=1.35, alpha=0.0001),
+        )
+        log_model.fit(X_train, np.log1p(y_train))
+        robust_trend_model.fit(X_train, y_train)
+        log_pred = np.maximum(0, np.expm1(log_model.predict(X_test)))
+        robust_pred = np.maximum(0, robust_trend_model.predict(X_test))
+        y_pred = (0.8 * log_pred) + (0.2 * robust_pred)
+        model_name = 'XGBoost + robust station-day ensemble'
     else:
         model = GradientBoostingRegressor(
-            n_estimators=260,
+            n_estimators=320,
             max_depth=4,
             learning_rate=0.04,
             subsample=0.85,
             random_state=42,
         )
-
-    model.fit(X_train, y_train)
-    y_pred = np.maximum(0, model.predict(X_test))
+        model.fit(X_train, y_train)
+        y_pred = np.maximum(0, model.predict(X_test))
+        model_name = 'GradientBoosting station-day'
 
     mae = mean_absolute_error(y_test, y_pred)
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
@@ -304,9 +387,10 @@ def train_station_day_model(df):
         'train_rows': int(len(X_train)),
         'test_rows': int(len(X_test)),
         'stations': int(len(stations)),
+        'features': int(len(feature_cols)),
         'split_date': pd.Timestamp(split_date).strftime('%Y-%m-%d'),
-        'model': 'XGBoost station-day' if HAS_XGB else 'GradientBoosting station-day',
-        'note': 'Station-day validation uses station identity, calendar features, and lag/rolling history from the provided violation dataset only.',
+        'model': model_name,
+        'note': 'Station-day validation uses station identity, calendar features, city/station lag history, training-period station profiles, and rolling history from the provided violation dataset only.',
     }
 
 

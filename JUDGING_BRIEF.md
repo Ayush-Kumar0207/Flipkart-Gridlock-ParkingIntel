@@ -64,7 +64,7 @@ The dataset contains parking violation records, not direct traffic speed or dela
 
 The 7-day citywide forecast should be framed as a planning signal. The dashboard foregrounds average validation error because it is easier for judges to interpret operationally: a roughly 11% daily-count error is useful for staffing and patrol planning, while R² can look modest on noisy daily enforcement data.
 
-The stronger model-quality proof is the station-day validation layer: the same organizer dataset becomes 6,642 station-day examples across 54 police stations, producing R²=0.641 with time-aware lag and rolling features. Use this to answer model-quality questions, but keep the product story focused on prioritization and patrol allocation.
+The stronger model-quality proof is the station-day validation layer: the same organizer dataset becomes 6,642 station-day examples across 54 police stations, producing R²=0.690 with time-aware lag features, rolling history, station profiles, and a robust XGBoost ensemble. Use this to answer model-quality questions, but keep the product story focused on prioritization and patrol allocation.
 
 Use this framing in Q&A: "We are not claiming direct travel-time reduction from this dataset alone. We are prioritizing enforcement where parking violations are most likely to create congestion."
 

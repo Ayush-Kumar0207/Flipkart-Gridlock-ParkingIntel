@@ -272,16 +272,17 @@
     "dow_cos": 0.0795
   },
   "station_model_metrics": {
-    "r2": 0.641,
-    "mae": 17.6,
-    "rmse": 31.7,
+    "r2": 0.69,
+    "mae": 15.8,
+    "rmse": 29.4,
     "avg_actual": 33.2,
     "rows": 6642,
     "train_rows": 5292,
     "test_rows": 1350,
     "stations": 54,
+    "features": 96,
     "split_date": "2024-03-15",
-    "model": "XGBoost station-day",
-    "note": "Station-day validation uses station identity, calendar features, and lag/rolling history from the provided violation dataset only."
+    "model": "XGBoost + robust station-day ensemble",
+    "note": "Station-day validation uses station identity, calendar features, city/station lag history, training-period station profiles, and rolling history from the provided violation dataset only."
   }
 }

@@ -1201,7 +1201,7 @@ function renderForecasts(forecasts) {
     if (forecasts.station_model_metrics) {
         const sm = forecasts.station_model_metrics;
         const stationMetric = document.querySelector('#metricStationR2 .metric-value');
-        if (stationMetric) stationMetric.textContent = formatNumber(sm.r2, 3);
+        if (stationMetric) stationMetric.textContent = Number(sm.r2 || 0).toFixed(3);
         const stationCard = document.getElementById('metricStationR2');
         if (stationCard) {
             stationCard.title = `${sm.model}: ${formatNumber(sm.rows)} station-day rows, ${formatNumber(sm.test_rows)} held out after ${sm.split_date}`;
