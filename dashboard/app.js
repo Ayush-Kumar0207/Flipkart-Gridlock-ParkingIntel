@@ -59,6 +59,8 @@ const BASEMAP_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}
 const BASEMAP_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
 const BASEMAP_TIMEOUT_MS = 3500;
 const OFFLINE_BASEMAP_BOUNDS = [[12.76, 77.40], [13.19, 77.82]];
+const OFFLINE_SVG_WIDTH = 1600;
+const OFFLINE_SVG_HEIGHT = 1200;
 const OFFLINE_STREETS = [
     { weight: 3.4, opacity: 0.18, coords: [[12.82, 77.46], [12.89, 77.51], [12.94, 77.55], [12.98, 77.60], [13.03, 77.65], [13.10, 77.70]] },
     { weight: 3.0, opacity: 0.16, coords: [[13.13, 77.48], [13.08, 77.53], [13.02, 77.58], [12.96, 77.62], [12.89, 77.66]] },
@@ -79,9 +81,10 @@ const OFFLINE_LABELS = [
     { text: 'Bengaluru', lat: 12.9716, lon: 77.5946, kind: 'city' },
     { text: 'CBD / MG Road', lat: 12.978, lon: 77.615, kind: 'zone' },
     { text: 'Yeshwanthpur', lat: 13.025, lon: 77.54, kind: 'zone' },
+    { text: 'Hebbal', lat: 13.035, lon: 77.595, kind: 'zone' },
     { text: 'Koramangala', lat: 12.935, lon: 77.625, kind: 'zone' },
+    { text: 'Malleshwaram', lat: 13.006, lon: 77.57, kind: 'zone' },
     { text: 'Whitefield Axis', lat: 12.99, lon: 77.72, kind: 'zone' },
-    { text: 'Offline schematic basemap', lat: 12.785, lon: 77.435, kind: 'note' },
 ];
 
 function formatNumber(value, digits = 0) {
@@ -296,79 +299,221 @@ function createOfflineLabel(text, kind) {
     });
 }
 
-function addOfflineStreet(group, pathOptions, coords, weight = 1, opacity = 0.08) {
-    L.polyline(coords, {
-        ...pathOptions,
-        color: `rgba(148, 163, 184, ${opacity})`,
-        weight,
-        lineCap: 'round',
-        lineJoin: 'round',
-    }).addTo(group);
+function offlinePoint(lat, lon) {
+    const [[south, west], [north, east]] = OFFLINE_BASEMAP_BOUNDS;
+    return [
+        ((lon - west) / (east - west)) * OFFLINE_SVG_WIDTH,
+        ((north - lat) / (north - south)) * OFFLINE_SVG_HEIGHT,
+    ];
 }
 
-function renderOfflineStreetTexture(group, pathOptions) {
+function svgEl(tag, attrs = {}) {
+    const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, String(value)));
+    return el;
+}
+
+function offlinePath(coords, close = false) {
+    const d = coords.map(([lat, lon], index) => {
+        const [x, y] = offlinePoint(lat, lon);
+        return `${index === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`;
+    }).join(' ');
+    return close ? `${d} Z` : d;
+}
+
+function addSvgPath(parent, coords, attrs = {}) {
+    parent.appendChild(svgEl('path', {
+        d: offlinePath(coords, false),
+        fill: 'none',
+        'stroke-linecap': 'round',
+        'stroke-linejoin': 'round',
+        ...attrs,
+    }));
+}
+
+function addSvgPolygon(parent, coords, attrs = {}) {
+    parent.appendChild(svgEl('path', {
+        d: offlinePath(coords, true),
+        ...attrs,
+    }));
+}
+
+function offlineBlob(lat, lon, radiusLat, radiusLon, points = 18, phase = 0) {
+    const coords = [];
+    for (let i = 0; i < points; i++) {
+        const theta = (i / points) * Math.PI * 2;
+        const wobble = 1 + Math.sin(theta * 3 + phase) * 0.09 + Math.cos(theta * 5 + phase) * 0.045;
+        coords.push([
+            lat + Math.sin(theta) * radiusLat * wobble,
+            lon + Math.cos(theta) * radiusLon * wobble,
+        ]);
+    }
+    return coords;
+}
+
+function offlineRing(lat, lon, radiusLat, radiusLon, phase = 0) {
+    const coords = [];
+    for (let i = 0; i <= 96; i++) {
+        const theta = (i / 96) * Math.PI * 2;
+        const wobble = 1 + Math.sin(theta * 4 + phase) * 0.055 + Math.cos(theta * 7 + phase) * 0.028;
+        coords.push([
+            lat + Math.sin(theta) * radiusLat * wobble,
+            lon + Math.cos(theta) * radiusLon * wobble,
+        ]);
+    }
+    return coords;
+}
+
+function offlineRadial(lat, lon, angle, lengthLat, lengthLon, phase = 0) {
+    const coords = [];
+    for (let step = 0; step <= 8; step++) {
+        const t = step / 8;
+        const bend = Math.sin(t * Math.PI * 2 + phase) * 0.006;
+        coords.push([
+            lat + Math.sin(angle) * lengthLat * t + Math.sin(angle + Math.PI / 2) * bend,
+            lon + Math.cos(angle) * lengthLon * t + Math.cos(angle + Math.PI / 2) * bend,
+        ]);
+    }
+    return coords;
+}
+
+function renderOfflineStreetTexture(svg) {
+    const land = svgEl('g', { opacity: 1 });
+    const casing = svgEl('g', { opacity: 1 });
+    const roads = svgEl('g', { opacity: 1 });
+    const highlights = svgEl('g', { opacity: 1 });
+
+    [
+        [13.02, 77.54, 0.075, 0.055, '#10141c', 0.72],
+        [12.99, 77.63, 0.058, 0.072, '#111821', 0.66],
+        [12.91, 77.66, 0.050, 0.070, '#0f151d', 0.58],
+        [13.08, 77.69, 0.052, 0.050, '#0c1119', 0.62],
+        [12.88, 77.49, 0.044, 0.064, '#0d121b', 0.56],
+    ].forEach(([lat, lon, rLat, rLon, fill, opacity], index) => {
+        addSvgPolygon(land, offlineBlob(lat, lon, rLat, rLon, 26, index * 0.8), {
+            fill,
+            'fill-opacity': opacity,
+            stroke: '#232936',
+            'stroke-opacity': 0.12,
+            'stroke-width': 1,
+        });
+    });
+
+    [
+        [12.885, 77.705, 0.030, 0.052, '#05080f', 0.95],
+        [13.035, 77.675, 0.022, 0.034, '#060a12', 0.72],
+        [12.955, 77.515, 0.026, 0.035, '#141923', 0.42],
+    ].forEach(([lat, lon, rLat, rLon, fill, opacity], index) => {
+        addSvgPolygon(land, offlineBlob(lat, lon, rLat, rLon, 22, index + 2.1), {
+            fill,
+            'fill-opacity': opacity,
+            stroke: '#303642',
+            'stroke-opacity': 0.08,
+            'stroke-width': 1,
+        });
+    });
+
+    const neighborhoods = [
+        [12.9716, 77.5946, 0.036, 0.052, 0.0],
+        [13.025, 77.54, 0.030, 0.046, 0.9],
+        [12.935, 77.625, 0.032, 0.050, 1.8],
+        [12.995, 77.715, 0.034, 0.044, 2.4],
+        [13.055, 77.61, 0.030, 0.050, 3.1],
+        [12.900, 77.515, 0.032, 0.046, 4.0],
+    ];
+
+    neighborhoods.forEach(([lat, lon, rLat, rLon, phase], index) => {
+        [0.38, 0.58, 0.80, 1.04, 1.30].forEach((scale, ringIndex) => {
+            addSvgPath(roads, offlineRing(lat, lon, rLat * scale, rLon * scale, phase + ringIndex), {
+                stroke: '#404652',
+                'stroke-width': ringIndex < 2 ? 2.0 : 1.35,
+                'stroke-opacity': ringIndex < 2 ? 0.20 : 0.12,
+            });
+        });
+
+        const spokes = 12 + (index % 3) * 2;
+        for (let i = 0; i < spokes; i++) {
+            const angle = (i / spokes) * Math.PI * 2 + phase * 0.22;
+            addSvgPath(roads, offlineRadial(lat, lon, angle, rLat * 1.55, rLon * 1.62, phase + i), {
+                stroke: '#353b46',
+                'stroke-width': i % 4 === 0 ? 1.8 : 1.1,
+                'stroke-opacity': i % 4 === 0 ? 0.16 : 0.10,
+            });
+        }
+    });
+
+    for (let i = 0; i < 24; i++) {
+        const lat = 12.79 + i * 0.016;
+        const coords = [];
+        for (let step = 0; step <= 10; step++) {
+            const t = step / 10;
+            coords.push([
+                lat + Math.sin(t * Math.PI * 2 + i * 0.45) * 0.0048,
+                77.425 + t * 0.365,
+            ]);
+        }
+        addSvgPath(roads, coords, {
+            stroke: '#303642',
+            'stroke-width': i % 5 === 0 ? 1.45 : 0.85,
+            'stroke-opacity': i % 5 === 0 ? 0.24 : 0.13,
+        });
+    }
+
+    for (let i = 0; i < 24; i++) {
+        const lon = 77.43 + i * 0.0155;
+        const coords = [];
+        for (let step = 0; step <= 10; step++) {
+            const t = step / 10;
+            coords.push([
+                12.79 + t * 0.36,
+                lon + Math.cos(t * Math.PI * 2 + i * 0.5) * 0.0048,
+            ]);
+        }
+        addSvgPath(roads, coords, {
+            stroke: '#2d333d',
+            'stroke-width': i % 6 === 0 ? 1.35 : 0.75,
+            'stroke-opacity': i % 6 === 0 ? 0.22 : 0.12,
+        });
+    }
+
     OFFLINE_STREETS.forEach(street => {
-        addOfflineStreet(group, pathOptions, street.coords, street.weight, street.opacity);
+        addSvgPath(casing, street.coords, {
+            stroke: '#02040a',
+            'stroke-width': Math.max(1.7, street.weight * 2.7),
+            'stroke-opacity': 0.42,
+        });
+        addSvgPath(roads, street.coords, {
+            stroke: '#555d6c',
+            'stroke-width': Math.max(0.8, street.weight * 1.0),
+            'stroke-opacity': Math.min(0.28, street.opacity * 1.65),
+        });
+        addSvgPath(highlights, street.coords, {
+            stroke: '#9aa3b2',
+            'stroke-width': Math.max(0.35, street.weight * 0.25),
+            'stroke-opacity': 0.055,
+        });
     });
 
-    const centerLat = 12.9716;
-    const centerLon = 77.5946;
+    svg.append(land, casing, roads, highlights);
+}
 
-    // Dense neutral street texture for offline judging. It is intentionally
-    // approximate and muted so data overlays remain the visual priority.
-    for (let i = 0; i < 34; i++) {
-        const angle = -Math.PI + (i / 34) * Math.PI * 2;
-        const length = 0.11 + (i % 5) * 0.018;
-        const coords = [];
-        for (let step = 0; step <= 7; step++) {
-            const t = step / 7;
-            const bend = Math.sin(t * Math.PI * 2 + i * 0.8) * 0.008;
-            coords.push([
-                centerLat + Math.sin(angle) * length * t + Math.sin(angle + Math.PI / 2) * bend,
-                centerLon + Math.cos(angle) * length * t + Math.cos(angle + Math.PI / 2) * bend,
-            ]);
-        }
-        addOfflineStreet(group, pathOptions, coords, i % 4 === 0 ? 1.4 : 0.9, i % 4 === 0 ? 0.11 : 0.065);
-    }
-
-    [0.035, 0.062, 0.092, 0.128, 0.165].forEach((radius, ringIndex) => {
-        const coords = [];
-        for (let i = 0; i <= 72; i++) {
-            const theta = (i / 72) * Math.PI * 2;
-            const wobble = 1 + Math.sin(theta * 3 + ringIndex) * 0.08;
-            coords.push([
-                centerLat + Math.sin(theta) * radius * wobble,
-                centerLon + Math.cos(theta) * radius * wobble * 1.32,
-            ]);
-        }
-        addOfflineStreet(group, pathOptions, coords, ringIndex < 2 ? 1.2 : 0.8, ringIndex < 2 ? 0.09 : 0.055);
+function createOfflineBasemapSvg() {
+    const svg = svgEl('svg', {
+        viewBox: `0 0 ${OFFLINE_SVG_WIDTH} ${OFFLINE_SVG_HEIGHT}`,
+        preserveAspectRatio: 'none',
+        class: 'offline-basemap-svg',
+        role: 'img',
+        'aria-label': 'Local dark offline basemap',
     });
 
-    for (let i = 0; i < 15; i++) {
-        const lat = 12.80 + i * 0.024;
-        const coords = [];
-        for (let step = 0; step <= 9; step++) {
-            const t = step / 9;
-            coords.push([
-                lat + Math.sin(t * Math.PI * 2 + i) * 0.006,
-                77.43 + t * 0.35,
-            ]);
-        }
-        addOfflineStreet(group, pathOptions, coords, 0.7, 0.045);
-    }
+    svg.appendChild(svgEl('rect', {
+        width: OFFLINE_SVG_WIDTH,
+        height: OFFLINE_SVG_HEIGHT,
+        fill: '#04070f',
+    }));
 
-    for (let i = 0; i < 15; i++) {
-        const lon = 77.43 + i * 0.025;
-        const coords = [];
-        for (let step = 0; step <= 9; step++) {
-            const t = step / 9;
-            coords.push([
-                12.80 + t * 0.36,
-                lon + Math.cos(t * Math.PI * 2 + i * 0.7) * 0.006,
-            ]);
-        }
-        addOfflineStreet(group, pathOptions, coords, 0.7, 0.04);
-    }
+    renderOfflineStreetTexture(svg);
+    return svg;
 }
 
 function createOfflineBasemapLayer(leafletMap) {
@@ -386,13 +531,17 @@ function createOfflineBasemapLayer(leafletMap) {
 
     L.rectangle(OFFLINE_BASEMAP_BOUNDS, {
         ...pathOptions,
-        color: 'rgba(90, 156, 245, 0.24)',
+        color: 'rgba(255,255,255,0.045)',
         weight: 1,
-        fillColor: '#071226',
-        fillOpacity: 0.62,
+        fillColor: '#04070f',
+        fillOpacity: 1,
     }).addTo(group);
 
-    renderOfflineStreetTexture(group, pathOptions);
+    L.svgOverlay(createOfflineBasemapSvg(), OFFLINE_BASEMAP_BOUNDS, {
+        pane: paneName,
+        interactive: false,
+        opacity: 1,
+    }).addTo(group);
 
     OFFLINE_LABELS.forEach(label => {
         L.marker([label.lat, label.lon], {
@@ -410,7 +559,7 @@ function createOfflineBasemapStatus(mapLabel) {
     const control = L.control({ position: 'bottomleft' });
     control.onAdd = () => {
         const el = L.DomUtil.create('div', 'offline-basemap-badge');
-        el.innerHTML = `<strong>Offline basemap</strong><span>${escapeHtml(mapLabel)} is using a local schematic; data overlays remain exact.</span>`;
+        el.innerHTML = `<strong>Offline basemap</strong><span>${escapeHtml(mapLabel)} is using a local dark basemap; data overlays remain exact.</span>`;
         return el;
     };
     return control;

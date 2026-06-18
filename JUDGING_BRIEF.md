@@ -31,7 +31,7 @@ Theme 1 is the strongest choice because the organizer-provided parking dataset h
 
 ## Demo Path
 
-For local zip judging, start from `dashboard/` with `python -m http.server 8000` and open `http://localhost:8000?offline=1`. This uses the vendored frontend libraries and local schematic basemap immediately, while all hotspots, heat density, charts, forecasts, and patrol routes still come from the included JSON artifacts.
+For local zip judging, start from `dashboard/` with `python -m http.server 8000` and open `http://localhost:8000?offline=1`. This uses the vendored frontend libraries and local dark basemap immediately, while all hotspots, heat density, charts, forecasts, and patrol routes still come from the included JSON artifacts.
 
 1. **Hotspot Map**  
    Open with the Priority Lens and state the core evidence: 298,450 records, 674 detected clusters, 209,129 unique coordinates. Briefly switch to Audit All to show that the clean view is intentional, not missing data.

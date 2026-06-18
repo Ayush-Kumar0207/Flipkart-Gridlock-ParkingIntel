@@ -6,4 +6,4 @@ These files are checked in so the reviewer zip can run without CDN access:
 - Chart.js 4.4.0: `chartjs/chart.umd.min.js`
 - Leaflet.heat 0.2.0: `leaflet-heat/leaflet-heat.js`
 
-The dashboard may still use Carto Dark Matter tiles when live internet is available. Use `http://localhost:8000?offline=1` to force the local schematic basemap for judging.
+The dashboard may still use Carto Dark Matter tiles when live internet is available. Use `http://localhost:8000?offline=1` to force the local dark basemap for judging.

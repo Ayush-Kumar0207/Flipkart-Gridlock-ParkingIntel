@@ -706,11 +706,7 @@ body::before {
 }
 
 .leaflet-container.basemap-offline {
-    background:
-        linear-gradient(120deg, rgba(40, 116, 240, 0.08), transparent 38%),
-        radial-gradient(circle at 32% 42%, rgba(255, 229, 0, 0.08), transparent 24%),
-        var(--bg-deepest) !important;
-    background-size: auto, auto, auto !important;
+    background: #04070f !important;
 }
 
 .offline-basemap-badge {
@@ -739,27 +735,24 @@ body::before {
 }
 
 .offline-map-label {
-    display: grid !important;
-    place-items: center;
-    padding: 0 0.5rem;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 999px;
-    background: rgba(5, 8, 22, 0.74);
-    color: rgba(232, 234, 246, 0.84);
-    box-shadow: 0 0 18px rgba(40, 116, 240, 0.11);
-    font: 800 0.62rem 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    display: block !important;
+    color: rgba(171, 178, 194, 0.52);
+    font: 800 0.58rem 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     letter-spacing: 0;
+    line-height: 1;
+    text-align: center;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 10px rgba(0, 0, 0, 0.75);
     white-space: nowrap;
 }
 
 .offline-map-label-city {
-    border-color: rgba(255, 229, 0, 0.34);
-    color: var(--fk-yellow);
-    font-size: 0.78rem;
+    color: rgba(214, 218, 229, 0.28);
+    font-size: 1.16rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
 .offline-map-label-note {
-    border-color: rgba(90, 156, 245, 0.18);
     color: var(--text-dim);
     font-size: 0.56rem;
 }

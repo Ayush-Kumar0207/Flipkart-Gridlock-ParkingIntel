@@ -154,7 +154,7 @@ http://localhost:8000?offline=1
 
 > **💡 Tip:** Pre-generated dashboard JSON is included. A full HDBSCAN pipeline rebuild is an offline preprocessing step and can take several minutes on Windows.
 >
-> **Offline judging:** Leaflet, Leaflet.heat, Chart.js, and Leaflet's image assets are vendored under `dashboard/vendor/`. The dashboard can use live Carto tiles when available, but it automatically switches to a local schematic basemap on `?offline=1`, browser offline events, failed tile requests, or tile timeout.
+> **Offline judging:** Leaflet, Leaflet.heat, Chart.js, and Leaflet's image assets are vendored under `dashboard/vendor/`. The dashboard can use live Carto tiles when available, but it automatically switches to a local dark basemap on `?offline=1`, browser offline events, failed tile requests, or tile timeout.
 
 ---
 
@@ -209,7 +209,7 @@ Flipkart-Gridlock-ParkingIntel/
 | **Maps** | Leaflet.js + Leaflet.heat |
 | **Charts** | Chart.js 4 |
 | **Frontend** | Vanilla HTML/CSS/JS |
-| **Map Tiles** | CartoDB Dark Matter when online, local schematic fallback when offline |
+| **Map Tiles** | CartoDB Dark Matter when online, local dark fallback when offline |
 | **Typography** | Inter / JetBrains Mono with system fallbacks |
 
 ---

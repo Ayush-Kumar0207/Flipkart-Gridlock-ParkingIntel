@@ -40,6 +40,6 @@ Then open:
 http://localhost:8000?offline=1
 ```
 
-This path uses vendored Leaflet, Leaflet.heat, Chart.js, and Leaflet image assets from `dashboard/vendor/`. The query parameter forces the local schematic basemap immediately, so the demo does not wait on live internet or external map tiles. Without the query parameter, Carto tiles are used when available and the dashboard falls back automatically on tile errors, browser offline events, or tile timeout.
+This path uses vendored Leaflet, Leaflet.heat, Chart.js, and Leaflet image assets from `dashboard/vendor/`. The query parameter forces the local dark basemap immediately, so the demo does not wait on live internet or external map tiles. Without the query parameter, Carto tiles are used when available and the dashboard falls back automatically on tile errors, browser offline events, or tile timeout.
 
 Do not open `dashboard/index.html` directly from the filesystem; the browser needs the local HTTP server so `dashboard/data/*.json` can be fetched reliably.
