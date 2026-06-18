@@ -293,9 +293,14 @@ body::before {
 }
 
 .kpi-card {
+    --kpi-accent: var(--fk-blue);
+    --kpi-accent-soft: rgba(40, 116, 240, 0.12);
+    --kpi-border-hover: rgba(40, 116, 240, 0.34);
     flex: 1;
     min-width: 0;
-    background: var(--bg-glass);
+    background:
+        linear-gradient(180deg, var(--kpi-accent-soft), transparent 42%),
+        var(--bg-glass);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     padding: 0.6rem 0.75rem;
@@ -314,14 +319,16 @@ body::before {
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, var(--fk-blue), transparent);
-    opacity: 0;
+    background: linear-gradient(90deg, transparent 0%, var(--kpi-accent) 18%, var(--kpi-accent) 62%, transparent 100%);
+    opacity: 0.9;
     transition: var(--transition);
 }
 
 .kpi-card:hover {
-    background: var(--bg-glass-hover);
-    border-color: var(--border-accent);
+    background:
+        linear-gradient(180deg, var(--kpi-accent-soft), transparent 42%),
+        var(--bg-glass-hover);
+    border-color: var(--kpi-border-hover);
     transform: translateY(-1px);
 }
 
@@ -329,9 +336,34 @@ body::before {
     opacity: 1;
 }
 
-.kpi-card.accent::before {
-    background: linear-gradient(90deg, var(--fk-yellow), transparent);
-    opacity: 1;
+#kpi-total {
+    --kpi-accent: var(--fk-blue-light);
+    --kpi-accent-soft: rgba(90, 156, 245, 0.10);
+    --kpi-border-hover: rgba(90, 156, 245, 0.34);
+}
+
+#kpi-hotspots {
+    --kpi-accent: var(--high);
+    --kpi-accent-soft: rgba(255, 156, 38, 0.10);
+    --kpi-border-hover: rgba(255, 156, 38, 0.34);
+}
+
+#kpi-daily {
+    --kpi-accent: var(--low);
+    --kpi-accent-soft: rgba(20, 184, 166, 0.10);
+    --kpi-border-hover: rgba(20, 184, 166, 0.34);
+}
+
+#kpi-mainroad {
+    --kpi-accent: var(--fk-yellow);
+    --kpi-accent-soft: rgba(255, 229, 0, 0.12);
+    --kpi-border-hover: rgba(255, 229, 0, 0.38);
+}
+
+#kpi-heavy {
+    --kpi-accent: #a855f7;
+    --kpi-accent-soft: rgba(168, 85, 247, 0.10);
+    --kpi-border-hover: rgba(168, 85, 247, 0.34);
 }
 
 .kpi-value {
