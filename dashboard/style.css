@@ -956,6 +956,26 @@ body::before {
     filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.55));
 }
 
+#patrolMap .patrol-zone-hit-area {
+    pointer-events: visibleFill;
+}
+
+#patrolMap .patrol-zone-tooltip {
+    background: rgba(10, 14, 39, 0.94);
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 229, 0, 0.45);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-card);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.76rem;
+    font-weight: 600;
+    padding: 0.42rem 0.58rem;
+}
+
+#patrolMap .leaflet-tooltip-top.patrol-zone-tooltip::before {
+    border-top-color: rgba(255, 229, 0, 0.45);
+}
+
 .map-lens-panel {
     position: absolute;
     top: 166px;

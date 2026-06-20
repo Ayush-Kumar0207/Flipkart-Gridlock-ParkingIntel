@@ -556,8 +556,8 @@
     {
       "budget_units": 10,
       "zones_covered": 7,
-      "covered_peak_violations_per_day": 198.3,
-      "modeled_weekly_reduction": 500.0,
+      "covered_peak_violations_per_day": 202.6,
+      "modeled_weekly_reduction": 511.0,
       "deployments": [
         {
           "station": "Upparpet",
@@ -608,12 +608,12 @@
           "modeled_weekly_reduction": 34.0
         },
         {
-          "station": "Rajajinagar",
+          "station": "City Market",
           "units": 1,
           "recommended_units": 5,
-          "cis": 44.7,
-          "peak_window": "07:00-12:00 IST",
-          "modeled_weekly_reduction": 24.0
+          "cis": 47.2,
+          "peak_window": "08:00-11:00 IST",
+          "modeled_weekly_reduction": 35.0
         }
       ]
     },
@@ -692,8 +692,8 @@
     {
       "budget_units": 20,
       "zones_covered": 9,
-      "covered_peak_violations_per_day": 291.0,
-      "modeled_weekly_reduction": 728.0,
+      "covered_peak_violations_per_day": 296.3,
+      "modeled_weekly_reduction": 743.0,
       "deployments": [
         {
           "station": "Upparpet",
@@ -705,11 +705,11 @@
         },
         {
           "station": "Shivajinagar",
-          "units": 3,
+          "units": 4,
           "recommended_units": 5,
           "cis": 55.9,
           "peak_window": "09:00-12:00 IST",
-          "modeled_weekly_reduction": 171.0
+          "modeled_weekly_reduction": 198.0
         },
         {
           "station": "Malleshwaram",
@@ -721,11 +721,11 @@
         },
         {
           "station": "Kodigehalli",
-          "units": 3,
+          "units": 2,
           "recommended_units": 5,
           "cis": 46.2,
           "peak_window": "10:00-13:00 IST",
-          "modeled_weekly_reduction": 60.0
+          "modeled_weekly_reduction": 49.0
         },
         {
           "station": "HAL Old Airport",

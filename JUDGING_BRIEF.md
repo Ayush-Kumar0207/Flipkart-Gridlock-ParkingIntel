@@ -46,7 +46,7 @@ For local zip judging, start from `dashboard/` with `python -m http.server 8000`
    Show temporal peaks, station rankings, vehicle mix, and violation types. Emphasize that the system is learning enforcement timing patterns from historical data.
 
 5. **Patrol Planner**  
-   Use the budget slider and the deployment frontier. Show that the model changes deployment, redraws the route, and exposes marginal gain as resources increase instead of producing a static top-10 list.
+   Use the budget slider and the deployment frontier. Show that the model changes deployment, redraws the route, and exposes marginal gain as resources increase instead of producing a static top-10 list. Marker number and color represent composite deployment priority, not CIS rank alone; the recommendation balances CIS with peak demand, trend, and diminishing returns from each additional unit.
 
 6. **Forecasts**  
    Explain the 7-day forecast, average citywide error, and station-day validation. Keep the claim precise: this is a short-horizon planning signal, not a city traffic simulator.

@@ -94,8 +94,7 @@ def _allocate_budget(playbooks, budget):
 
         def marginal_value(p):
             used = assignments[p['station']]
-            trend_boost = 1 + max(p['trend_pct'], 0) / 250
-            return (p['priority_score'] * trend_boost) / ((used + 1) ** 0.7)
+            return p['priority_score'] / ((used + 1) ** 0.7)
 
         best = max(candidates, key=marginal_value)
         assignments[best['station']] += 1

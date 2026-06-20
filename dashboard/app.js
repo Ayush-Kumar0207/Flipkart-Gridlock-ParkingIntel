@@ -14,6 +14,7 @@ let clusterMarkers = [];
 let patrolMarkers = [];
 let patrolRouteLayer = null;
 let patrolStationLookup = new Map();
+let patrolZoneLookup = new Map();
 let hourlyAnimData = {};
 let isPlaying = false;
 let playInterval = null;
@@ -1524,7 +1525,11 @@ function renderAnalytics(temporal) {
 function initPatrolView(enforcement, opsBrief) {
     if (!enforcement || enforcement.length === 0) return;
     const playbookMap = new Map((opsBrief?.station_playbooks || []).map(p => [p.station, p]));
-    patrolStationLookup = new Map(enforcement.map(rec => [rec.station, rec]));
+    const plannerRecommendations = enforcement
+        .map(rec => ({ ...rec, ...(playbookMap.get(rec.station) || {}) }))
+        .sort((a, b) => Number(a.rank || Infinity) - Number(b.rank || Infinity));
+    patrolStationLookup = new Map(plannerRecommendations.map(rec => [rec.station, rec]));
+    patrolZoneLookup = new Map();
 
     // Init patrol map
     patrolMap = L.map('patrolMap', {
@@ -1543,8 +1548,9 @@ function initPatrolView(enforcement, opsBrief) {
     let totalViolations = 0;
     let totalReduction = 0;
 
-    enforcement.forEach((rec, i) => {
-        const color = rec.cis > 55 ? COLORS.critical : rec.cis > 45 ? COLORS.high : rec.cis > 30 ? COLORS.medium : COLORS.low;
+    plannerRecommendations.forEach((rec, i) => {
+        const rank = Number(rec.rank) || i + 1;
+        const color = rank === 1 ? COLORS.critical : rank <= 3 ? COLORS.high : rank <= 6 ? COLORS.medium : COLORS.low;
 
         const circle = L.circle([rec.lat, rec.lon], {
             radius: 600,
@@ -1553,6 +1559,8 @@ function initPatrolView(enforcement, opsBrief) {
             color: color,
             weight: 2,
             opacity: 0.6,
+            className: 'patrol-zone-hit-area',
+            bubblingMouseEvents: false,
         }).addTo(patrolMap);
 
         const marker = L.marker([rec.lat, rec.lon], {
@@ -1563,7 +1571,7 @@ function initPatrolView(enforcement, opsBrief) {
                     border-radius:50%; display:flex; align-items:center; justify-content:center;
                     font-weight:700; font-size:11px; font-family:'JetBrains Mono',monospace;
                     box-shadow: 0 0 12px ${color}80;
-                ">${i + 1}</div>`,
+                ">${rank}</div>`,
                 iconSize: [24, 24],
                 iconAnchor: [12, 12],
             }),
@@ -1575,11 +1583,17 @@ function initPatrolView(enforcement, opsBrief) {
             <div class="popup-row"><span class="popup-label">Violations</span><span class="popup-value">${rec.total_violations.toLocaleString()}</span></div>
             <div class="popup-row"><span class="popup-label">Peak Hours</span><span class="popup-value">${rec.peak_hours_str}</span></div>
             <div class="popup-row"><span class="popup-label">Peak Demand</span><span class="popup-value">${formatNumber(rec.peak_window_daily_avg, 1)}/day</span></div>
-            <div class="popup-row"><span class="popup-label">Patrol Units</span><span class="popup-value">${rec.recommended_units}</span></div>
+            <div class="popup-row"><span class="popup-label">Recommended Units</span><span class="popup-value">${rec.recommended_units}</span></div>
             <div class="popup-row"><span class="popup-label">Est. Reduction</span><span class="popup-value" style="color:#06d6a0">${rec.expected_reduction_pct}%</span></div>
         `);
 
+        const baseTooltip = `${rank}. ${rec.station}: deployment priority`;
+        const tooltipOptions = { direction: 'top', sticky: true, className: 'patrol-zone-tooltip' };
+        circle.bindTooltip(baseTooltip, tooltipOptions);
+        marker.bindTooltip(baseTooltip, tooltipOptions);
+
         patrolMarkers.push(marker);
+        patrolZoneLookup.set(rec.station, { circle, marker, rank, rec });
         totalViolations += rec.total_violations;
         totalReduction += rec.expected_reduction_pct;
     });
@@ -1587,20 +1601,22 @@ function initPatrolView(enforcement, opsBrief) {
     // Render patrol list
     const list = document.getElementById('patrolList');
     list.innerHTML = '';
-    enforcement.forEach((rec, i) => {
+    plannerRecommendations.forEach((rec, i) => {
         const playbook = playbookMap.get(rec.station);
-        const tags = playbook?.reason_tags || [];
+        const tags = rec.reason_tags || playbook?.reason_tags || [];
+        const rank = Number(rec.rank) || i + 1;
+        const peakHours = rec.peak_hours_str || (rec.peak_hours || []).map(hour => `${String(hour).padStart(2, '0')}:00`).join(', ');
         const tagHtml = tags.map(tag => `<span class="patrol-tag">${tag}</span>`).join('');
         const item = document.createElement('div');
         item.className = 'patrol-item';
         item.innerHTML = `
             <div class="patrol-item-header">
-                <span class="patrol-item-name">${i+1}. ${rec.station}</span>
+                <span class="patrol-item-name">${rank}. ${rec.station}</span>
                 <span class="patrol-item-cis">CIS ${rec.cis}</span>
             </div>
             <div class="patrol-item-details">
-                <span class="patrol-item-detail">🕐 ${rec.peak_hours_str}</span>
-                <span class="patrol-item-detail">🚔 ${rec.recommended_units} units</span>
+                <span class="patrol-item-detail">🕐 ${peakHours}</span>
+                <span class="patrol-item-detail">🚔 ${rec.recommended_units} recommended</span>
                 <span class="patrol-item-detail">${formatNumber(rec.peak_window_daily_avg, 1)}/day peak</span>
                 <span class="patrol-item-detail" style="color:${COLORS.low}">↓${rec.expected_reduction_pct}%</span>
             </div>
@@ -1613,9 +1629,9 @@ function initPatrolView(enforcement, opsBrief) {
     });
 
     // Summary
-    document.getElementById('totalZones').textContent = enforcement.length;
+    document.getElementById('totalZones').textContent = plannerRecommendations.length;
     document.getElementById('estCoverage').textContent = totalViolations.toLocaleString() + ' violations';
-    document.getElementById('projReduction').textContent = (totalReduction / enforcement.length).toFixed(0) + '% avg';
+    document.getElementById('projReduction').textContent = (totalReduction / plannerRecommendations.length).toFixed(0) + '% avg';
 
     initBudgetSimulator(opsBrief);
 }
@@ -1710,6 +1726,12 @@ function renderPatrolRoute(scenario) {
         .filter(item => item.rec);
     const coords = stops.map(item => [item.rec.lat, item.rec.lon]);
 
+    patrolZoneLookup.forEach(({ circle, marker, rank, rec }, station) => {
+        const tooltipText = `${rank}. ${station}: not funded in ${scenario.budget_units}-unit plan / ${rec.recommended_units} recommended`;
+        circle.setTooltipContent(tooltipText);
+        marker.setTooltipContent(tooltipText);
+    });
+
     if (coords.length > 1) {
         L.polyline(coords, {
             color: COLORS.yellow,
@@ -1722,6 +1744,14 @@ function renderPatrolRoute(scenario) {
 
     stops.forEach((item, index) => {
         const { dep, rec } = item;
+        const rank = Number(rec.rank) || index + 1;
+        const tooltipText = `${rank}. ${dep.station}: ${dep.units} budgeted / ${dep.recommended_units} recommended`;
+        const zoneLayers = patrolZoneLookup.get(dep.station);
+        if (zoneLayers) {
+            zoneLayers.circle.setTooltipContent(tooltipText);
+            zoneLayers.marker.setTooltipContent(tooltipText);
+        }
+
         L.circleMarker([rec.lat, rec.lon], {
             radius: 14 + Math.min(8, dep.units * 2),
             fillColor: COLORS.yellow,
@@ -1729,10 +1759,7 @@ function renderPatrolRoute(scenario) {
             color: COLORS.yellow,
             weight: 2,
             opacity: 0.9,
-        }).addTo(patrolRouteLayer).bindTooltip(
-            `${index + 1}. ${dep.station}: ${dep.units} unit${dep.units > 1 ? 's' : ''}`,
-            { direction: 'top', sticky: true }
-        );
+        }).addTo(patrolRouteLayer);
     });
 
     const routeTitle = document.getElementById('routeTitle');
